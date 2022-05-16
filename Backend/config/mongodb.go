@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -18,8 +17,6 @@ func ClientConnection() *mongo.Client {
 	if err := client.Ping(context.TODO(), nil); err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Connected to MongoDB!")
 
 	return client
 }
