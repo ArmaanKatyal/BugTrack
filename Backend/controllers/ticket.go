@@ -62,6 +62,45 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func Ticket(w http.ResponseWriter, r *http.Request) {
+	// Check if the request method is GET or not
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var ticket models.Ticket
+	// Get the client connection
+	client := config.ClientConnection()
+	// Get the collection
+	coll := client.Database("bugTrack").Collection("tickets")
+	// Get the id from the request
+	params := mux.Vars(r)
+	ticketID, _ := primitive.ObjectIDFromHex(params["id"])
+	// Get the project by id
+	err := coll.FindOne(context.TODO(), bson.D{{"_id", ticketID}}).Decode(&ticket)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
+
+	// Marshal the project into JSON
+	w.Header().Set("Content-Type", "application/json")
+	// Write the JSON response
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(ticket)
+	if err != nil {
+		return
+	}
+}
+
 // CreateTicket accepts a JSON request and creates a new ticket
 func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is POST or not
@@ -303,9 +342,14 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 func DeleteProjectTickets(projectID primitive.ObjectID) bool {
 	// Get the client connection
 	client := config.ClientConnection()
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
 	coll := client.Database("bugTrack").Collection("tickets")
 	// filter to delete the project with the id provided
-	filter := bson.D{{"projectID", projectID}}
+	filter := bson.D{{"project_id", projectID}}
 	// Delete the project
 	_, err := coll.DeleteMany(context.TODO(), filter)
 	if err != nil {
