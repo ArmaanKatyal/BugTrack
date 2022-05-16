@@ -61,6 +61,45 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func Project(w http.ResponseWriter, r *http.Request) {
+	// Check if the request method is GET or not
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var project models.Project
+	// Get the client connection
+	client := config.ClientConnection()
+	// Get the collection
+	coll := client.Database("bugTrack").Collection("projects")
+	// Get the id from the request
+	params := mux.Vars(r)
+	projectID, _ := primitive.ObjectIDFromHex(params["id"])
+	// Get the project by id
+	err := coll.FindOne(context.TODO(), bson.D{{"_id", projectID}}).Decode(&project)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
+
+	// Marshal the project into JSON
+	w.Header().Set("Content-Type", "application/json")
+	// Write the JSON response
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(project)
+	if err != nil {
+		return
+	}
+}
+
 // CreateProject accepts a JSON request and creates a new project
 func CreateProject(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is POST or not
