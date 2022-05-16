@@ -254,7 +254,24 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	// If the project is deleted then all the existing tickets in the project are also
 	// deleted. So we need to delete all the tickets in the project
 
-	// TODO: Delete all the tickets in the project
+	// delete all the tickets of the project
+	ticketDeleteResult := DeleteProjectTickets(projectID)
+	if ticketDeleteResult == false {
+		output := struct {
+			Status string `json:"status"`
+		}{
+			Status: "error",
+		}
+		// set the status to 500 Internal Server Error
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		// Write the JSON response
+		err = json.NewEncoder(w).Encode(output)
+		if err != nil {
+			return
+		}
+		return
+	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
