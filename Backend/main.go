@@ -15,7 +15,9 @@ func main() {
 	router.HandleFunc("/api/v1/project/update/{id}", controllers.UpdateProject).Methods("PUT")
 	router.HandleFunc("/api/v1/project/delete/{id}", controllers.DeleteProject).Methods("DELETE")
 	router.HandleFunc("/api/v1/ticket", controllers.AllTickets).Methods("GET")
-	router.HandleFunc("/api/v1/ticket/create/{projectId}", controllers.CreateTicket).Methods("POST")
+	router.HandleFunc("/api/v1/ticket/create", controllers.CreateTicket).Methods("POST")
+	router.HandleFunc("/api/v1/ticket/update/{id}", controllers.UpdateTicket).Methods("PUT")
+	router.HandleFunc("/api/v1/ticket/delete/{id}", controllers.DeleteTicket).Methods("DELETE")
 	router.NotFoundHandler = http.HandlerFunc(NotFound)
 
 	srv := &http.Server{
@@ -29,6 +31,6 @@ func main() {
 	}
 }
 
-func NotFound(w http.ResponseWriter, r *http.Request) {
+func NotFound(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
