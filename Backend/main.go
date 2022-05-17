@@ -22,6 +22,11 @@ func main() {
 	router.HandleFunc("/api/v1/ticket/delete/{id:[0-9a-fA-F]{24}}", controllers.DeleteTicket).Methods("DELETE")
 	router.HandleFunc("/api/v1/user", controllers.AllUsers).Methods("GET")
 	router.HandleFunc("/api/v1/user/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.User).Methods("GET")
+	router.HandleFunc("/api/v1/user/create", controllers.CreateUser).Methods("POST")
+	router.HandleFunc("/api/v1/user/update/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UpdateUser).Methods("PUT")
+	router.HandleFunc("/api/v1/user/delete/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.DeleteUser).Methods("DELETE")
+	router.HandleFunc("/api/v1/user/validUsername/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.CheckUsernameExists).Methods("POST")
+	router.HandleFunc("/api/v1/user/profile/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UserProfile).Methods("GET")
 	router.NotFoundHandler = http.HandlerFunc(NotFound)
 
 	srv := &http.Server{
