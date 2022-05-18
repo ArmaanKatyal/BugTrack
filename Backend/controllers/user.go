@@ -19,6 +19,12 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
@@ -68,6 +74,13 @@ func User(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	var user models.User
 	// Get the client connection
 	client := config.ClientConnection()
@@ -76,7 +89,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	// Get the id from the request
 	params := mux.Vars(r)
 	// Get the project by id
-	err := coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&user)
+	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -107,11 +120,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	// Create a new user
 	var user models.CreateUser
 	// Decode the request body into the new user
-	err := decoder.Decode(&user)
+	err = decoder.Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -180,6 +199,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// get the username from the url
 	params := mux.Vars(r)
 	username := params["username"]
@@ -193,7 +218,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Create a new user
 	var user models.CreateUser
 	// Decode the request body into the new user
-	err := decoder.Decode(&user)
+	err = decoder.Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -276,6 +301,12 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// get the username from the url
 	params := mux.Vars(r)
 	username := params["username"]
@@ -344,7 +375,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 // CheckUsernameExists checks if the username exists in the database or not
 func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
-	if r.Method != "POST" {
+	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
@@ -405,6 +436,12 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	params := mux.Vars(r)
 	username := params["username"]
 	if username == "" {
@@ -423,7 +460,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 
 	coll := client.Database("bugTrack").Collection("users")
 	var user models.User
-	err := coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user)
+	err = coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			w.WriteHeader(http.StatusNotFound)
