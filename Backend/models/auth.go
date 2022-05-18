@@ -16,3 +16,7 @@ type JSONWebKeys struct {
 	E   string   `json:"e"`
 	X5c []string `json:"x5c"`
 }
+
+type Auth struct {
+	Token string `json:"token"`
+}
