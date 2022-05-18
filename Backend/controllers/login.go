@@ -1,23 +1,19 @@
 package controllers
 
 import (
+	"Backend/config"
+	"Backend/models"
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 )
 
 var jwtKey = []byte("my_secret_key")
-
-var users = map[string]string{
-	"user1": "password1",
-	"user2": "password2",
-}
-
-type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type Claims struct {
 	Username string `json:"username"`
@@ -30,22 +26,41 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var creds Credentials
-	err := json.NewDecoder(r.Body).Decode(&creds)
+	var credentials models.Credentials
+	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	expectedPassword, ok := users[creds.Username]
-	if !ok || expectedPassword != creds.Password {
+	client := config.ClientConnection()
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
+
+	coll := client.Database("bugTrack").Collection("users")
+	var user models.User
+	err = coll.FindOne(context.TODO(), bson.M{"username": credentials.Username}).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	databasePassword := []byte(user.Password)
+	userPassword := []byte(credentials.Password)
+
+	err = bcrypt.CompareHashAndPassword(databasePassword, userPassword)
+	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	expirationTime := time.Now().Add(2 * time.Hour)
 	claims := &Claims{
-		Username: creds.Username,
+		Username: credentials.Username,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -59,28 +74,30 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//w.WriteHeader(http.StatusOK)
-	//output := struct {
-	//	Name    string    `json:"name"`
-	//	Token   string    `json:"token"`
-	//	Expires time.Time `json:"expires"`
-	//}{
-	//	Name:    "token",
-	//	Token:   tokenString,
-	//	Expires: expirationTime,
-	//}
-	//err = json.NewEncoder(w).Encode(output)
-	//if err != nil {
-	//	return
-	//}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:    "token",
 		Value:   tokenString,
 		Expires: expirationTime,
 	})
+
 }
 
-func Refresh(w http.ResponseWriter, r *http.Request) {
+func authenticate(r *http.Request) (string, error) {
+	authToken := r.Header.Get("token")
+	claims := &Claims{}
 
+	token, err := jwt.ParseWithClaims(authToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			fmt.Println("Invalid signature")
+			return "", err
+		}
+		return "", err
+	}
+	if !token.Valid {
+		return "", err
+	}
+	return claims.Username, nil
 }
