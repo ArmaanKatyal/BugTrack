@@ -27,10 +27,9 @@ func main() {
 	router.HandleFunc("/api/v1/user/create", controllers.CreateUser).Methods("POST")
 	router.HandleFunc("/api/v1/user/update/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UpdateUser).Methods("PUT")
 	router.HandleFunc("/api/v1/user/delete/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.DeleteUser).Methods("DELETE")
-	router.HandleFunc("/api/v1/user/validUsername/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.CheckUsernameExists).Methods("POST")
+	router.HandleFunc("/api/v1/user/validUsername/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.CheckUsernameExists).Methods("GET")
 	router.HandleFunc("/api/v1/user/profile/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UserProfile).Methods("GET")
 	router.HandleFunc("/api/v1/user/login", controllers.UserLogin).Methods("POST", "OPTIONS")
-	router.HandleFunc("/api/v1/user/refresh", controllers.Refresh).Methods("POST")
 	router.NotFoundHandler = http.HandlerFunc(NotFound)
 
 	corsWrapper := cors.New(cors.Options{
