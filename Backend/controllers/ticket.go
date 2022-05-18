@@ -357,3 +357,52 @@ func DeleteProjectTickets(projectID primitive.ObjectID) bool {
 	}
 	return true
 }
+
+func ProjectTickets(w http.ResponseWriter, r *http.Request) {
+	// Check if the request method is GET or not
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	params := mux.Vars(r)
+	projectID, _ := primitive.ObjectIDFromHex(params["projectID"])
+	// check for the exception where id is not provided
+	if projectID == primitive.NilObjectID {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Get the client connection
+	client := config.ClientConnection()
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	coll := client.Database("bugTrack").Collection("tickets")
+	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Create a slice of tickets
+	var tickets []models.Ticket
+	// Iterate through the cursor
+	if err = cursor.All(context.TODO(), &tickets); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// set the status to 200 OK
+	w.WriteHeader(http.StatusOK)
+	// set the header to application/json
+	w.Header().Set("Content-Type", "application/json")
+	// Write the JSON response
+	err = json.NewEncoder(w).Encode(tickets)
+	if err != nil {
+		return
+	}
+
+}

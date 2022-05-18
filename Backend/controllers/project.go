@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"time"
 )
 
 // AllProjects writes the JSON response of all projects
@@ -120,6 +121,13 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("projects")
 	// Insert the project
@@ -137,6 +145,19 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
+		return
+	}
+
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:   "create",
+		Author: "admin",
+		Date:   primitive.NewDateTimeFromTime(time.Now()),
+		Table:  "projects",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -159,14 +180,6 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-
-	defer func() {
-		// Disconnect the client
-		if err := client.Disconnect(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}()
 
 }
 

@@ -27,3 +27,8 @@ type Profile struct {
 	TicketsCreated  []Ticket `json:"tickets_created" bson:"tickets_created"`
 	TicketsAssigned []Ticket `json:"tickets_assigned" bson:"tickets_assigned"`
 }
+
+type Login struct {
+	Username     string `json:"username" bson:"username"`
+	PasswordHash string `json:"password_hash" bson:"password_hash"`
+}
