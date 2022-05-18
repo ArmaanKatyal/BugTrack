@@ -19,6 +19,12 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
@@ -68,6 +74,13 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	var ticket models.Ticket
 	// Get the client connection
 	client := config.ClientConnection()
@@ -77,7 +90,7 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	ticketID, _ := primitive.ObjectIDFromHex(params["id"])
 	// Get the project by id
-	err := coll.FindOne(context.TODO(), bson.D{{"_id", ticketID}}).Decode(&ticket)
+	err = coll.FindOne(context.TODO(), bson.D{{"_id", ticketID}}).Decode(&ticket)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -109,11 +122,17 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	// Create a new project
 	var ticket models.CreateTicket
 	// Decode the request body into the new project
-	err := decoder.Decode(&ticket)
+	err = decoder.Decode(&ticket)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -179,6 +198,12 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// get the project id from the url
 	params := mux.Vars(r)
 	ticketID, _ := primitive.ObjectIDFromHex(params["id"])
@@ -192,7 +217,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	// Create a new project
 	var ticket models.CreateTicket
 	// Decode the request body into the new project
-	err := decoder.Decode(&ticket)
+	err = decoder.Decode(&ticket)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -271,6 +296,12 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is DELETE or not
 	if r.Method != "DELETE" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -362,6 +393,12 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
