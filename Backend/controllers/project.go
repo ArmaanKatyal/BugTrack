@@ -15,8 +15,13 @@ import (
 // AllProjects writes the JSON response of all projects
 func AllProjects(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
-	if r.Method != "GET" {
+	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -68,6 +73,13 @@ func Project(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	var project models.Project
 	// Get the client connection
 	client := config.ClientConnection()
@@ -77,7 +89,7 @@ func Project(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	projectID, _ := primitive.ObjectIDFromHex(params["id"])
 	// Get the project by id
-	err := coll.FindOne(context.TODO(), bson.D{{"_id", projectID}}).Decode(&project)
+	err = coll.FindOne(context.TODO(), bson.D{{"_id", projectID}}).Decode(&project)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -109,11 +121,17 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	// Create a new project
 	var project models.CreateProject
 	// Decode the request body into the new project
-	err := decoder.Decode(&project)
+	err = decoder.Decode(&project)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -191,6 +209,12 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// get the project id from the url
 	params := mux.Vars(r)
 	projectID, _ := primitive.ObjectIDFromHex(params["id"])
@@ -204,7 +228,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	// Create a new project
 	var project models.CreateProject
 	// Decode the request body into the new project
-	err := decoder.Decode(&project)
+	err = decoder.Decode(&project)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -283,6 +307,12 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is DELETE or not
 	if r.Method != "DELETE" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	_, err := authenticate(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
