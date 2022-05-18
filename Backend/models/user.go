@@ -7,6 +7,7 @@ type User struct {
 	FirstName string             `json:"first_name" bson:"first_name"`
 	LastName  string             `json:"last_name" bson:"last_name"`
 	Username  string             `json:"username" bson:"username"`
+	Password  string             `json:"password" bson:"password"`
 	Email     string             `json:"email" bson:"email"`
 	CreatedOn primitive.DateTime `json:"created_on" bson:"created_on"`
 }
@@ -16,6 +17,7 @@ type CreateUser struct {
 	LastName  string             `json:"last_name" bson:"last_name"`
 	Username  string             `json:"username" bson:"username"`
 	Email     string             `json:"email" bson:"email"`
+	Password  string             `json:"password" bson:"password"`
 	CreatedOn primitive.DateTime `json:"created_on" bson:"created_on"`
 }
 
@@ -28,7 +30,7 @@ type Profile struct {
 	TicketsAssigned []Ticket `json:"tickets_assigned" bson:"tickets_assigned"`
 }
 
-type Login struct {
-	Username     string `json:"username" bson:"username"`
-	PasswordHash string `json:"password_hash" bson:"password_hash"`
+type Credentials struct {
+	Username string `json:"username" bson:"username"`
+	Password string `json:"password" bson:"password"`
 }
