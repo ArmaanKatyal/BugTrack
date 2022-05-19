@@ -15,7 +15,7 @@ import (
 // AllProjects writes the JSON response of all projects
 func AllProjects(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
-	if r.Method != "POST" {
+	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
@@ -121,7 +121,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -168,10 +168,11 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	logColl := client.Database("bugTrack").Collection("logs")
 	log := models.Log{
-		Type:   "create",
-		Author: "admin",
-		Date:   primitive.NewDateTimeFromTime(time.Now()),
-		Table:  "projects",
+		Type:        "Create",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: Author + " created project " + project.Title,
+		Table:       "projects",
 	}
 	_, err = logColl.InsertOne(context.TODO(), log)
 	if err != nil {
@@ -209,7 +210,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -278,6 +279,20 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:        "Update",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: Author + " updated project " + project.Title,
+		Table:       "projects",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// set the status to 200 OK
 	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
@@ -310,7 +325,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -381,6 +396,20 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		Status string `json:"status"`
 	}{
 		Status: "success",
+	}
+
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:        "Delete",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: Author + " deleted project " + params["id"],
+		Table:       "projects",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	// set the status to 200 OK
