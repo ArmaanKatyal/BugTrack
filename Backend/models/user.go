@@ -2,6 +2,7 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// User struct holds the user data that is stored in the database
 type User struct {
 	Id        primitive.ObjectID `json:"id" bson:"_id"`
 	FirstName string             `json:"first_name" bson:"first_name"`
@@ -13,6 +14,7 @@ type User struct {
 	CreatedOn primitive.DateTime `json:"created_on" bson:"created_on"`
 }
 
+// CreateUser structs holds the user data when creating a new user
 type CreateUser struct {
 	FirstName string             `json:"first_name" bson:"first_name"`
 	LastName  string             `json:"last_name" bson:"last_name"`
@@ -23,6 +25,7 @@ type CreateUser struct {
 	CreatedOn primitive.DateTime `json:"created_on" bson:"created_on"`
 }
 
+// Profile struct holds the user profile data that is stored in the database
 type Profile struct {
 	FirstName       string   `json:"first_name" bson:"first_name"`
 	LastName        string   `json:"last_name" bson:"last_name"`
@@ -33,6 +36,7 @@ type Profile struct {
 	TicketsAssigned []Ticket `json:"tickets_assigned" bson:"tickets_assigned"`
 }
 
+// Credentials holds the user credentials
 type Credentials struct {
 	Username string `json:"username" bson:"username"`
 	Password string `json:"password" bson:"password"`

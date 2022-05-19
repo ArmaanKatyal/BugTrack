@@ -2,6 +2,7 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// Log struct holds the log data that is stored in the database
 type Log struct {
 	Type        string             `json:"type" bson:"type"`
 	Author      string             `json:"author" bson:"author"`

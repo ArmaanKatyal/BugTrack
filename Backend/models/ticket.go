@@ -2,6 +2,7 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// Ticket struct holds the ticket data that is stored in the database
 type Ticket struct {
 	Id          primitive.ObjectID `json:"id" bson:"_id"`
 	Title       string             `json:"title" bson:"title"`
@@ -16,6 +17,7 @@ type Ticket struct {
 	ProjectId   primitive.ObjectID `json:"project_id" bson:"project_id"`
 }
 
+// CreateTicket structs holds the ticket data when creating a new ticket
 type CreateTicket struct {
 	Title       string             `json:"title" bson:"title"`
 	Description string             `json:"description" bson:"description"`
