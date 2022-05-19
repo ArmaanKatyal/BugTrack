@@ -20,7 +20,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	_, err := authenticate(r)
+	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -62,7 +64,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// Write the JSON response
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(tickets)
+	err = json.NewEncoder(w).Encode(tickets) // encode the tickets into JSON
 	if err != nil {
 		return
 	}
@@ -76,13 +78,15 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	_, err := authenticate(r)
+	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	var ticket models.Ticket
+	var ticket models.Ticket //	create a new ticket
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
@@ -123,7 +127,9 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	Author, err := authenticate(r)
+	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -147,30 +153,31 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	result, err := coll.InsertOne(context.TODO(), ticket)
 
 	if err != nil {
+		// if there is an error
 		output := struct {
 			Status string `json:"status"`
 		}{
 			Status: "error",
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		err = json.NewEncoder(w).Encode(output)
+		w.Header().Set("Content-Type", "application/json") // set the content type
+		w.WriteHeader(http.StatusInternalServerError)      // set the status code
+		err = json.NewEncoder(w).Encode(output)            // encode the output
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
+	log := models.Log{ // create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " created a ticket with the id: " + result.InsertedID.(primitive.ObjectID).Hex(),
 		Table:       "tickets",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
-	if err != nil {
+	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
+	if err != nil {                                 // if there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -213,8 +220,9 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	Author, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -265,7 +273,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result.ModifiedCount == 0 {
+	if result.ModifiedCount == 0 { // if the project is not updated
 		output := struct {
 			Status string `json:"status"`
 		}{
@@ -282,15 +290,15 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
+	log := models.Log{ // create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " updated a ticket with the id: " + ticketID.Hex(),
 		Table:       "tickets",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
+	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -300,7 +308,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
-	output := struct {
+	output := struct { // struct to hold the status of the project updated
 		Status string `json:"status"`
 	}{
 		Status: "success",
@@ -328,8 +336,9 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	Author, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -356,8 +365,8 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result.DeletedCount == 0 {
-		output := struct {
+	if result.DeletedCount == 0 { // if the project is not deleted
+		output := struct { // struct to hold the status of the project deleted
 			Status string `json:"status"`
 		}{
 			Status: "error",
@@ -373,21 +382,21 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output := struct {
+	output := struct { // struct to hold the status of the project deleted
 		Status string `json:"status"`
 	}{
 		Status: "success",
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
+	log := models.Log{ // create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " deleted a ticket with the id: " + ticketID.Hex(),
 		Table:       "tickets",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
+	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -429,7 +438,7 @@ func DeleteProjectTickets(projectID primitive.ObjectID) bool {
 	if err != nil {
 		return false
 	}
-	return true
+	return true // return true if the tickets are deleted
 }
 
 func ProjectTickets(w http.ResponseWriter, r *http.Request) {
@@ -439,13 +448,14 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	_, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	params := mux.Vars(r)
+	params := mux.Vars(r) // get the project id from the url
 	projectID, _ := primitive.ObjectIDFromHex(params["projectID"])
 	// check for the exception where id is not provided
 	if projectID == primitive.NilObjectID {
@@ -461,8 +471,8 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets")
-	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}})
+	coll := client.Database("bugTrack").Collection("tickets")                   // get the tickets collection
+	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}}) // find the tickets of the project
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -494,6 +504,7 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	_, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -508,10 +519,10 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database("bugTrack").Collection("tickets") // get the tickets collection
 
 	// Get the query parameters
-	queryParams := r.URL.Query()
+	queryParams := r.URL.Query() // get the query parameters
 	typeVal := queryParams.Get("type")
 
 	// Check if the type is provided
@@ -559,8 +570,9 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated and logged in
 	_, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -573,10 +585,10 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database("bugTrack").Collection("tickets") // get the tickets collection
 
 	// Get the query parameters
-	queryParams := r.URL.Query()
+	queryParams := r.URL.Query() // get the query parameters
 	typeVal := queryParams.Get("type")
 
 	// Check if the type is provided

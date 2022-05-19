@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// AllUsers returns all the users in the database
 func AllUsers(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
 	if r.Method != "GET" {
@@ -20,8 +21,9 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	_, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -69,6 +71,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// User returns a user from the database
 func User(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
 	if r.Method != "GET" {
@@ -76,13 +79,14 @@ func User(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	_, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	var user models.User
+	var user models.User // Create a new user
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
@@ -114,6 +118,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateUser creates a new user in the database
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is POST or not
 	if r.Method != "POST" {
@@ -121,13 +126,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
+	decoder := json.NewDecoder(r.Body) // Create a new decoder
 	// Create a new user
 	var user models.CreateUser
 	// Decode the request body into the new user
@@ -137,7 +143,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if UserExists(user.Username) {
+	if UserExists(user.Username) { // Check if the user already exists
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -150,30 +156,30 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
 
-	if err != nil {
-		output := struct {
+	if err != nil { // If there is an error
+		output := struct { // Create a new output
 			Status string `json:"status"`
 		}{
 			Status: "error",
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		err = json.NewEncoder(w).Encode(output)
+		w.Header().Set("Content-Type", "application/json") // Set the content type
+		w.WriteHeader(http.StatusInternalServerError)      // Write the status code
+		err = json.NewEncoder(w).Encode(output)            // Encode the output
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
+	log := models.Log{ // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Created user " + user.Username,
 		Table:       "users",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
+	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -217,8 +223,9 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
-	if err != nil {
+	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -232,7 +239,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
+	decoder := json.NewDecoder(r.Body) // Create a new decoder
 	// Create a new user
 	var user models.CreateUser
 	// Decode the request body into the new user
@@ -271,7 +278,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	// if the values are not updated
 	if result.ModifiedCount == 0 {
-		output := struct {
+		output := struct { // Create a new output
 			Status string `json:"status"`
 		}{
 			Status: "error",
@@ -287,16 +294,16 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
+	log := models.Log{ // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Updated user " + username,
 		Table:       "users",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
-	if err != nil {
+	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
+	if err != nil {                                 // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -333,6 +340,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -356,14 +364,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	// Delete the user
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
-	if err != nil {
+	if err != nil { // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// if the user is not deleted
 	if result.DeletedCount == 0 {
-		output := struct {
+		output := struct { // Create a new output
 			Status string `json:"status"`
 		}{
 			Status: "error",
@@ -379,22 +387,22 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output := struct {
+	output := struct { // Create a new output
 		Status string `json:"status"`
 	}{
-		Status: "success",
+		Status: "success", // set the status to success
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs")
-	log := models.Log{
+	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
+	log := models.Log{ // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Deleted user " + username,
 		Table:       "users",
 	}
-	_, err = logColl.InsertOne(context.TODO(), log)
-	if err != nil {
+	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
+	if err != nil {                                 // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -426,7 +434,14 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := config.ClientConnection()
+	// check if the user is authenticated
+	_, err := authenticate(r)
+	if err != nil { // If there is an error
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	client := config.ClientConnection() // Get the client connection
 	defer func() {
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
@@ -439,19 +454,19 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	// Get the username from the request
 	params := mux.Vars(r)
 	// find the username in the database
-	var result bson.M
-	err := coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&result)
+	var result bson.M // Create a new result
+	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&result)
 	// If the username is not found
 	if err == mongo.ErrNoDocuments {
 		// Write the JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		output := struct {
+		output := struct { // Create a new output
 			Exists bool `json:"exists"`
 		}{
 			Exists: false,
 		}
-		err = json.NewEncoder(w).Encode(output)
+		err = json.NewEncoder(w).Encode(output) // Write the JSON response
 		if err != nil {
 			return
 		}
@@ -464,7 +479,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 		// if the username already exists
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		output := struct {
+		output := struct { // Create a new output
 			Exists bool `json:"exists"`
 		}{
 			Exists: true,
@@ -478,26 +493,29 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UserProfile returns the user profile of the user with the given username
 func UserProfile(w http.ResponseWriter, r *http.Request) {
+	// Check if the request method is GET or not
 	if r.Method != "GET" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.WriteHeader(http.StatusMethodNotAllowed) // set the status to 405 Method Not Allowed
 		return
 	}
 
+	// check if the user is authenticated
 	_, err := authenticate(r)
-	if err != nil {
+	if err != nil { // If not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	params := mux.Vars(r)
+	params := mux.Vars(r) // Get the username from the url
 	username := params["username"]
 	if username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	client := config.ClientConnection()
+	client := config.ClientConnection() // Get the client connection
 	defer func() {
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
@@ -506,22 +524,22 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("users")
-	var user models.User
-	err = coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user)
+	coll := client.Database("bugTrack").Collection("users")                          // Get the collection
+	var user models.User                                                             // Create a new user
+	err = coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user) // Find the user in the database
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if err == mongo.ErrNoDocuments { // If the user is not found
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError) // If there is an error
 		return
 	}
 
-	createdTicketColl := client.Database("bugTrack").Collection("tickets")
+	createdTicketColl := client.Database("bugTrack").Collection("tickets") // Get the tickets collection
 	// Get the cursor
-	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}})
-	if err != nil {
+	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}}) // Find the tickets created by the user
+	if err != nil {                                                                         // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -533,10 +551,10 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assignedTicketColl := client.Database("bugTrack").Collection("tickets")
+	assignedTicketColl := client.Database("bugTrack").Collection("tickets") // Get the tickets collection
 	// Get the cursor
-	cursor, err = assignedTicketColl.Find(context.TODO(), bson.D{{"assigned_to", username}})
-	if err != nil {
+	cursor, err = assignedTicketColl.Find(context.TODO(), bson.D{{"assigned_to", username}}) // Find the tickets assigned to the user
+	if err != nil {                                                                          // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -548,7 +566,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userProfile := models.Profile{
+	userProfile := models.Profile{ // Create a new user profile
 		FirstName:       user.FirstName,
 		LastName:        user.LastName,
 		Username:        user.Username,
@@ -556,17 +574,18 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		TicketsCreated:  createdTicket,
 		TicketsAssigned: assignedTicket,
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(userProfile)
+	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
+	w.WriteHeader(http.StatusOK)                       // Set the status to 200 OK
+	err = json.NewEncoder(w).Encode(userProfile)       // Write the JSON response
 	if err != nil {
 		return
 	}
 
 }
 
+// UserExists checks if the user with the given username exists
 func UserExists(username string) bool {
-	client := config.ClientConnection()
+	client := config.ClientConnection() // Get the client connection
 	defer func() {
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
@@ -574,10 +593,10 @@ func UserExists(username string) bool {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("users")
-	var user models.User
-	err := coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user)
-	if err != nil {
+	coll := client.Database("bugTrack").Collection("users")                           // Get the collection
+	var user models.User                                                              // Create a new user
+	err := coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user) // Find the user in the database
+	if err != nil {                                                                   // If there is an error
 		if err == mongo.ErrNoDocuments {
 			return false
 		}

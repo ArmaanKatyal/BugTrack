@@ -19,6 +19,8 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	// check if the user is authenticated
 	_, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -74,12 +76,14 @@ func Project(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	_, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// struct to hold the project
 	var project models.Project
 	// Get the client connection
 	client := config.ClientConnection()
@@ -121,6 +125,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -152,13 +157,17 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	result, err := coll.InsertOne(context.TODO(), project)
 
 	if err != nil {
+		// if there is an error
 		output := struct {
 			Status string `json:"status"`
 		}{
 			Status: "error",
 		}
+		// set the header to application/json
 		w.Header().Set("Content-Type", "application/json")
+		// write the response
 		w.WriteHeader(http.StatusInternalServerError)
+		// write the json response
 		err = json.NewEncoder(w).Encode(output)
 		if err != nil {
 			return
@@ -166,7 +175,9 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create a connection to log collection
 	logColl := client.Database("bugTrack").Collection("logs")
+	// create a new log
 	log := models.Log{
 		Type:        "Create",
 		Author:      Author,
@@ -174,7 +185,9 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		Description: Author + " created project " + project.Title,
 		Table:       "projects",
 	}
+	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)
+	// if there is an error
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -210,6 +223,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -279,7 +293,9 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create a connection to log collection
 	logColl := client.Database("bugTrack").Collection("logs")
+	// create a new log
 	log := models.Log{
 		Type:        "Update",
 		Author:      Author,
@@ -287,7 +303,9 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		Description: Author + " updated project " + project.Title,
 		Table:       "projects",
 	}
+	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)
+	// if there is an error
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -325,6 +343,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the user is authenticated
 	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -392,13 +411,16 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// struct to store the output
 	output := struct {
 		Status string `json:"status"`
 	}{
 		Status: "success",
 	}
 
+	// create a connection to log collection
 	logColl := client.Database("bugTrack").Collection("logs")
+	// create a new log
 	log := models.Log{
 		Type:        "Delete",
 		Author:      Author,
@@ -406,6 +428,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		Description: Author + " deleted project " + params["id"],
 		Table:       "projects",
 	}
+	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
