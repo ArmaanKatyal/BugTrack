@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"time"
 )
 
 func AllUsers(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +121,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -136,12 +137,15 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if UserExists(user.Username) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
-
-	// TODO : Check if the user already exists before creating it
 
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
@@ -158,6 +162,20 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
+		return
+	}
+
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:        "Create",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: "Created user " + user.Username,
+		Table:       "users",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -199,7 +217,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -269,6 +287,20 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:        "Update",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: "Updated user " + username,
+		Table:       "users",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// set the status to 200 OK
 	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
@@ -301,7 +333,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -351,6 +383,20 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Status string `json:"status"`
 	}{
 		Status: "success",
+	}
+
+	logColl := client.Database("bugTrack").Collection("logs")
+	log := models.Log{
+		Type:        "Delete",
+		Author:      Author,
+		Date:        primitive.NewDateTimeFromTime(time.Now()),
+		Description: "Deleted user " + username,
+		Table:       "users",
+	}
+	_, err = logColl.InsertOne(context.TODO(), log)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	// set the status to 200 OK
@@ -515,4 +561,25 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func UserExists(username string) bool {
+	client := config.ClientConnection()
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	coll := client.Database("bugTrack").Collection("users")
+	var user models.User
+	err := coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false
+		}
+		return false
+	}
+	return true
 }
