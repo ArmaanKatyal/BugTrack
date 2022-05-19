@@ -19,7 +19,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	_, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -475,10 +475,10 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the status to 200 OK
-	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
+	// set the status to 200 OK
+	w.WriteHeader(http.StatusOK)
 	// Write the JSON response
 	err = json.NewEncoder(w).Encode(tickets)
 	if err != nil {
@@ -541,10 +541,10 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the status to 200 OK
-	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
+	// set the status to 200 OK
+	w.WriteHeader(http.StatusOK)
 	// Write the JSON response
 	err = json.NewEncoder(w).Encode(tickets)
 	if err != nil {

@@ -180,10 +180,10 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the status to 201 Created
-	w.WriteHeader(http.StatusCreated)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
+	// set the status to 201 Created
+	w.WriteHeader(http.StatusCreated)
 
 	// struct to hold the id and status of the new project created
 	output := struct {
@@ -293,10 +293,10 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the status to 200 OK
-	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
+	// set the status to 200 OK
+	w.WriteHeader(http.StatusOK)
 	output := struct {
 		Status string `json:"status"`
 	}{
@@ -412,10 +412,10 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the status to 200 OK
-	w.WriteHeader(http.StatusOK)
 	// set the header to application/json
 	w.Header().Set("Content-Type", "application/json")
+	// set the status to 200 OK
+	w.WriteHeader(http.StatusOK)
 	// Write the JSON response
 	err = json.NewEncoder(w).Encode(output)
 	if err != nil {

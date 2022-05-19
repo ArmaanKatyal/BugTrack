@@ -444,6 +444,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	// If the username is not found
 	if err == mongo.ErrNoDocuments {
 		// Write the JSON response
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		output := struct {
 			Exists bool `json:"exists"`
@@ -461,6 +462,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		// if the username already exists
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		output := struct {
 			Exists bool `json:"exists"`
@@ -554,7 +556,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		TicketsCreated:  createdTicket,
 		TicketsAssigned: assignedTicket,
 	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(userProfile)
 	if err != nil {
