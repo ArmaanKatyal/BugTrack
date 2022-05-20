@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// AllUsers returns all the users in the database
+// AllUsers returns all the users in the database based on the role passed in the url
 func AllUsers(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
 	if r.Method != "GET" {
@@ -30,35 +30,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// Get the collection
-	coll := client.Database("bugTrack").Collection("users")
-	// Get the cursor
-	cursor, err := coll.Find(context.TODO(), bson.D{})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	// Create a slice of tickets
-	var Users []models.User
-	// Iterate through the cursor
-	if err = cursor.All(context.TODO(), &Users); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	defer func() {
-		// Close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -66,11 +38,57 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Marshal the tickets into JSON
-	w.Header().Set("Content-Type", "application/json")
-	// Write the JSON response
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(Users)
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	var users []models.User           // Create a new slice of users
+	role := r.URL.Query().Get("role") // Get the role from the request
+
+	coll := client.Database("bugTrack").Collection("users") // Get the users collection
+	if role == "developer" || role == "project-manager" || role == "submitter" || role == "admin" {
+		filter := bson.D{{"role", role}}                 // Filter to get the users with the role provided
+		cursor, err := coll.Find(context.TODO(), filter) // Get the cursor
+		if err != nil {                                  // If there is an error
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Iterate through the cursor
+		if err = cursor.All(context.TODO(), &users); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Close the cursor
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else if role == "" { // If the role is empty then get all the users
+		// Get the cursor
+		cursor, err := coll.Find(context.TODO(), bson.D{})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Iterate through the cursor
+		if err = cursor.All(context.TODO(), &users); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Close the cursor
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else { // If the role is not valid
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
+	w.WriteHeader(http.StatusOK)                       // Set the status to 200 OK
+	err = json.NewEncoder(w).Encode(users)             // Write the JSON response
 	if err != nil {
 		return
 	}
@@ -171,8 +189,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 
-	// TODO : Hash the password before creating the user
-
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
 
@@ -192,7 +208,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -321,7 +337,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -426,7 +442,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -644,6 +660,7 @@ func UserExists(username string) bool {
 	return true
 }
 
+// verifyAdmin checks if the user is an admin or not
 func verifyAdmin(Author string, client *mongo.Client) bool {
 	userColl := client.Database("bugTrack").Collection("users")   // Get the users collection
 	filter := bson.D{{"username", Author}}                        // Filter to get the user with the username provided
@@ -655,6 +672,22 @@ func verifyAdmin(Author string, client *mongo.Client) bool {
 	}
 
 	if user.Role != "admin" { // If the user is not an admin
+		return false
+	}
+	return true
+}
+
+// verifyProjectManager checks if the user is a project manager or not
+func verifyProjectManager(Author string, projectID primitive.ObjectID, client *mongo.Client) bool {
+	coll := client.Database("bugTrack").Collection("projects")   // Get the projects collection
+	filter := bson.D{{"_id", projectID}}                         // Filter to get the project with the project id provided
+	var project models.Project                                   // Create a new project
+	err := coll.FindOne(context.TODO(), filter).Decode(&project) // Get the project with the project id provided
+	if err != nil {
+		return false
+	}
+
+	if project.CreatedBy != Author { // If the user is not the project manager
 		return false
 	}
 	return true
