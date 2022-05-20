@@ -33,6 +33,7 @@ func main() {
 	router.HandleFunc("/api/v1/user/profile/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UserProfile).Methods("GET")
 	router.HandleFunc("/api/v1/user/login", controllers.UserLogin).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/user/logout", controllers.UserLogout).Methods("GET", "OPTIONS")
+	router.HandleFunc("/api/v1/user/changePassword", controllers.ChangePassword).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/logs", controllers.AllLogs).Methods("GET")
 	router.NotFoundHandler = http.HandlerFunc(NotFound)
 
