@@ -21,43 +21,98 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	// Get the client connection
-	client := config.ClientConnection()
-	// Get the collection
-	coll := client.Database("bugTrack").Collection("projects")
-	// Get the cursor
-	cursor, err := coll.Find(context.TODO(), bson.D{})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	// Create a slice of projects
 	var projects []models.Project
-	// Iterate through the cursor
-	if err = cursor.All(context.TODO(), &projects); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 
+	// Get the client connection
+	client := config.ClientConnection()
 	defer func() {
-		// Close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}()
+
+	userColl := client.Database("bugTrack").Collection("users")
+	var user models.User
+	err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}}).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Get the collection
+	coll := client.Database("bugTrack").Collection("projects")
+	if user.Role == "admin" {
+		// Get the cursor
+		cursor, err := coll.Find(context.TODO(), bson.D{})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Iterate through the cursor
+		if err = cursor.All(context.TODO(), &projects); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Close the cursor
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	} else if user.Role == "product-manager" {
+		filter := bson.D{{"created_by", Author}}
+		cursor, err := coll.Find(context.TODO(), filter)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err = cursor.All(context.TODO(), &projects); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else if user.Role == "developer" {
+		filter := bson.D{{"assigned_to", Author}}
+		cursor, err := coll.Find(context.TODO(), filter)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err = cursor.All(context.TODO(), &projects); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		output := struct {
+			Message string `json:"message"`
+		}{
+			Message: "error",
+		}
+		err = json.NewEncoder(w).Encode(output)
+		if err != nil {
+			return
+		}
+		return
+	}
 
 	// Marshal the projects into JSON
 	w.Header().Set("Content-Type", "application/json")
