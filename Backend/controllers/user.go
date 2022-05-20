@@ -208,7 +208,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -337,7 +337,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -442,7 +442,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),

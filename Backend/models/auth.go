@@ -1,6 +1,6 @@
 package models
 
-import "github.com/dgrijalva/jwt-go"
+import "github.com/golang-jwt/jwt/v4"
 
 // Jwks struct holds the JSON Web Key Set
 type Jwks struct {
@@ -25,5 +25,5 @@ type Auth struct {
 // Claims is the struct that contains the claims of the jwt token
 type Claims struct {
 	Username string `json:"username"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }

@@ -5,7 +5,7 @@ import (
 	"Backend/models"
 	"context"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
@@ -64,10 +64,16 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	// create the expiration time
 	expirationTime := time.Now().Add(1 * time.Hour)
 	// create the claims that contain the information carried by the token
+	//claims := &models.Claims{
+	//	Username: credentials.Username,
+	//	StandardClaims: claims.StandardClaims{
+	//		ExpiresAt: expirationTime.Unix(),
+	//	},
+	//}
 	claims := &models.Claims{
 		Username: credentials.Username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
 
@@ -215,5 +221,14 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+}
+
+// Signup handles the signup of a user
+func Signup(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 }
