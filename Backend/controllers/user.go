@@ -171,6 +171,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 
+	// TODO : Hash the password before creating the user
+
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
 
@@ -190,7 +192,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -319,7 +321,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -424,7 +426,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                        // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -532,16 +534,23 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil { // If not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// The user can only see access his own profile or only the admin can see other users profile
+
 	params := mux.Vars(r) // Get the username from the url
 	username := params["username"]
 	if username == "" {
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if Author != username {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -566,7 +575,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdTicketColl := client.Database("bugTrack").Collection("tickets") // Get the tickets collection
+	createdTicketColl := client.Database("bugTrack").Collection("tickets") // Get the ticket collection
 	// Get the cursor
 	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}}) // Find the tickets created by the user
 	if err != nil {                                                                         // If there is an error
