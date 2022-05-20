@@ -21,7 +21,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -30,35 +30,99 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	// Get the collection
-	coll := client.Database("bugTrack").Collection("tickets")
-	// Get the cursor
-	cursor, err := coll.Find(context.TODO(), bson.D{})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	// Create a slice of tickets
-	var tickets []models.Ticket
-	// Iterate through the cursor
-	if err = cursor.All(context.TODO(), &tickets); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	defer func() {
-		// Close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}()
+
+	userColl := client.Database("bugTrack").Collection("users") // get the users collection
+	filter := bson.D{{"username", Author}}                      // filter to get the user by id
+	var user models.User                                        // create a new user
+	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Create a slice of tickets
+	var tickets []models.Ticket
+
+	if user.Role == "admin" { // if the user is an admin, get all the tickets
+		// Get the collection
+		coll := client.Database("bugTrack").Collection("tickets")
+		// Get the cursor
+		cursor, err := coll.Find(context.TODO(), bson.D{})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Iterate through the cursor
+		if err = cursor.All(context.TODO(), &tickets); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else if user.Role == "developer" { // if the user is a developer, get all the tickets assigned to him
+		coll := client.Database("bugTrack").Collection("tickets")
+		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", user.Username}})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err = cursor.All(context.TODO(), &tickets); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else if user.Role == "submitter" { // if the user is a submitter, get all the tickets submitted by him
+		coll := client.Database("bugTrack").Collection("tickets")
+		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", user.Username}})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err = cursor.All(context.TODO(), &tickets); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else if user.Role == "product-manager" { // if the user is a product manager, get all the tickets assigned to the project he is in
+		projectColl := client.Database("bugTrack").Collection("projects")
+		filter := bson.D{{"created_by", Author}}
+		var project models.Project
+		err = projectColl.FindOne(context.TODO(), filter).Decode(&project)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		coll := client.Database("bugTrack").Collection("tickets")
+		cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err = cursor.All(context.TODO(), &tickets); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if err := cursor.Close(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 
 	// Marshal the tickets into JSON
 	w.Header().Set("Content-Type", "application/json")
@@ -169,7 +233,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                        // create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -291,7 +355,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                        // create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -389,7 +453,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                        // create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
