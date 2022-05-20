@@ -199,6 +199,10 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+	if verifyAdmin(Author, client) == false {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	defer func() {
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
@@ -306,6 +310,16 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+
+	// Check if the author is an admin or product-manager for the project to be updated only then the project can be updated
+	if verifyAdmin(Author, client) == false {
+		// Check if the user is a product manager for the project
+		if verifyProjectManager(Author, projectID, client) == false {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("projects")
 	// filter to update the project with the id provided
@@ -416,6 +430,10 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+	if verifyAdmin(Author, client) == false { // check if the user is an admin
+		w.WriteHeader(http.StatusUnauthorized) // set the status to 401 Unauthorized
+		return
+	}
 	coll := client.Database("bugTrack").Collection("projects")
 	// filter to delete the project with the id provided
 	filter := bson.D{{"_id", projectID}}
