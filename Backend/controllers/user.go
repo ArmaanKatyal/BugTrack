@@ -22,7 +22,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -30,6 +30,12 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 	// Get the cursor
@@ -80,7 +86,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	Author, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -89,6 +95,12 @@ func User(w http.ResponseWriter, r *http.Request) {
 	var user models.User // Create a new user
 	// Get the client connection
 	client := config.ClientConnection()
+
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 	// Get the id from the request
@@ -150,6 +162,12 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 
@@ -251,6 +269,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("users")
 	// filter to update the user with the username provided
@@ -358,6 +382,12 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
+
+	if verifyAdmin(Author, client) == false { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	coll := client.Database("bugTrack").Collection("users")
 	// filter to delete the user with the username provided
 	filter := bson.D{{"username", username}}
@@ -600,6 +630,22 @@ func UserExists(username string) bool {
 		if err == mongo.ErrNoDocuments {
 			return false
 		}
+		return false
+	}
+	return true
+}
+
+func verifyAdmin(Author string, client *mongo.Client) bool {
+	userColl := client.Database("bugTrack").Collection("users")   // Get the users collection
+	filter := bson.D{{"username", Author}}                        // Filter to get the user with the username provided
+	var user models.User                                          // Create a new user
+	err := userColl.FindOne(context.TODO(), filter).Decode(&user) // Get the user with the username provided
+
+	if err != nil {
+		return false
+	}
+
+	if user.Role != "admin" { // If the user is not an admin
 		return false
 	}
 	return true
