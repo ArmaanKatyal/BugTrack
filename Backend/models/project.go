@@ -9,6 +9,7 @@ type Project struct {
 	Description string             `json:"description" bson:"description, omitempty"`
 	CreatedBy   string             `json:"created_by" bson:"created_by"`
 	CreatedOn   primitive.DateTime `json:"created_on" bson:"created_on"`
+	AssignedTo  []string           `json:"assigned_to" bson:"assigned_to"`
 }
 
 // CreateProject structs holds the project data when creating a new project
@@ -17,4 +18,5 @@ type CreateProject struct {
 	Description string             `json:"description" bson:"description"`
 	CreatedBy   string             `json:"created_by" bson:"created_by"`
 	CreatedOn   primitive.DateTime `json:"created_on" bson:"created_on"`
+	AssignedTo  []string           `json:"assigned_to" bson:"assigned_to"`
 }
