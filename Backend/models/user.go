@@ -12,6 +12,7 @@ type User struct {
 	Role        string             `json:"role" bson:"role"`
 	CreatedOn   primitive.DateTime `json:"created_on" bson:"created_on"`
 	CompanyCode string             `json:"company_code" bson:"company_code"`
+	Locked      bool               `json:"locked" bson:"locked"`
 }
 
 // CreateUser structs holds the user data when creating a new user
@@ -23,6 +24,7 @@ type CreateUser struct {
 	Role        string             `json:"role" bson:"role"`
 	CreatedOn   primitive.DateTime `json:"created_on" bson:"created_on"`
 	CompanyCode string             `json:"company_code" bson:"company_code"`
+	Locked      bool               `json:"locked" bson:"locked"`
 }
 
 // Profile struct holds the user profile data that is stored in the database
