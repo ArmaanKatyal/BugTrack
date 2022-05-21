@@ -699,3 +699,117 @@ func verifyProjectManager(Author string, projectID primitive.ObjectID, client *m
 	}
 	return true
 }
+
+func Lock(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	Author, CompanyCode, err := authenticate(r) // Authenticate the user
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Get the username from the request
+	params := mux.Vars(r)
+	username := params["username"]
+
+	if !UserExists(username, CompanyCode) { // If the user does not exist
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	client := config.ClientConnection() // Get the client connection
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	userColl := client.Database(dbname).Collection("users")                 // Get the users collection
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
+	update := bson.D{{"$set", bson.D{{"locked", true}}}}                    // Update the user with the locked field set to true
+	_, err = userColl.UpdateOne(context.TODO(), filter, update)             // Update the user with the locked field set to true
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
+	w.WriteHeader(http.StatusOK)
+
+	output := struct {
+		Message string `json:"message"`
+	}{
+		Message: "success",
+	}
+	err = json.NewEncoder(w).Encode(output)
+	if err != nil {
+		return
+	}
+}
+
+func UnLock(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	Author, CompanyCode, err := authenticate(r) // Authenticate the user
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Get the username from the request
+	params := mux.Vars(r)
+	username := params["username"]
+
+	if !UserExists(username, CompanyCode) { // If the user does not exist
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	client := config.ClientConnection() // Get the client connection
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	userColl := client.Database(dbname).Collection("users")                 // Get the users collection
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
+	update := bson.D{{"$set", bson.D{{"locked", false}}}}                   // Update the user with the locked field set to false
+	_, err = userColl.UpdateOne(context.TODO(), filter, update)             // Update the user with the locked field set to false
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
+	w.WriteHeader(http.StatusOK)
+
+	output := struct {
+		Message string `json:"message"`
+	}{
+		Message: "success",
+	}
+	err = json.NewEncoder(w).Encode(output)
+	if err != nil {
+		return
+	}
+}
