@@ -9,8 +9,9 @@ import (
 
 func main() {
 
-	router := mux.NewRouter()
-	router.StrictSlash(true)
+	router := mux.NewRouter() // create a new router
+	router.StrictSlash(true)  // enable strict routing
+	// Handle the routes
 	router.HandleFunc("/api/v1/project", controllers.AllProjects).Methods("GET")
 	router.HandleFunc("/api/v1/project/{id:[0-9a-fA-F]{24}}", controllers.Project).Methods("GET")
 	router.HandleFunc("/api/v1/project/create", controllers.CreateProject).Methods("POST")
@@ -31,28 +32,30 @@ func main() {
 	router.HandleFunc("/api/v1/user/delete/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.DeleteUser).Methods("DELETE")
 	router.HandleFunc("/api/v1/user/validUsername/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.CheckUsernameExists).Methods("GET")
 	router.HandleFunc("/api/v1/user/profile/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UserProfile).Methods("GET")
+	router.HandleFunc("/api/v1/user/lock/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.Lock).Methods("POST")
+	router.HandleFunc("/api/v1/user/unlock/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UnLock).Methods("POST")
 	router.HandleFunc("/api/v1/auth/login", controllers.UserLogin).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/logout", controllers.UserLogout).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/changePassword", controllers.ChangePassword).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/forgotPassword", controllers.ForgotPassword).Methods("POST", "OPTIONS")
 	router.Path("/api/v1/auth/signup").Queries("role", "{role}").HandlerFunc(controllers.Signup).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/logs", controllers.AllLogs).Methods("GET")
-	router.NotFoundHandler = http.HandlerFunc(NotFound)
+	router.NotFoundHandler = http.HandlerFunc(NotFound) // set the 404 handler
 
-	corsWrapper := cors.New(cors.Options{
+	corsWrapper := cors.New(cors.Options{ // create a new cors wrapper
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 	})
 
-	err := http.ListenAndServe(":8080", corsWrapper.Handler(router))
+	err := http.ListenAndServe(":8080", corsWrapper.Handler(router)) // start the server
 	if err != nil {
 		return
 	}
 
 }
 
-func NotFound(w http.ResponseWriter, _ *http.Request) {
+func NotFound(w http.ResponseWriter, _ *http.Request) { // 404 handler
 	w.WriteHeader(http.StatusNotFound)
 }
