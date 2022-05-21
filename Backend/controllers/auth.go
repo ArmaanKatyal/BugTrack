@@ -51,6 +51,21 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userColl := client.Database("bugTrack").Collection("users")
+	filter = bson.D{{"username", credentials.Username}, {"company_code", credentials.CompanyCode}}
+	// find the user with the given username
+	var user2 models.User
+	err = userColl.FindOne(context.TODO(), filter).Decode(&user2)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if user2.Locked == true {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// convert the password to bytes
 	databasePassword := []byte(user.Password)
 	userPassword := []byte(credentials.Password)
@@ -120,6 +135,29 @@ func authenticate(r *http.Request) (string, string, error) {
 	if !token.Valid {
 		return "", "", err
 	}
+
+	client := config.ClientConnection()
+	defer func() {
+		// close the client connection
+		if err := client.Disconnect(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	// get the collection
+	userColl := client.Database("bugTrack").Collection("users")
+	filter := bson.D{{"username", claims.Username}, {"company_code", claims.CompanyCode}}
+	// find the user with the given username
+	var user models.User
+	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		return "", "", err
+	}
+
+	if user.Locked == true {
+		return "", "", err
+	}
+
 	// if the token is valid return the username
 	return claims.Username, claims.CompanyCode, nil
 }
@@ -216,7 +254,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json") // set the content type to json
 	w.WriteHeader(http.StatusOK)                       // return 200
-	output := struct {                                 // create the output
+	output := struct { // create the output
 		Message string `json:"message"`
 	}{
 		Message: "success",
