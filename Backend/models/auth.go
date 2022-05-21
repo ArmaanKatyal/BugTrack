@@ -24,6 +24,17 @@ type Auth struct {
 
 // Claims is the struct that contains the claims of the jwt token
 type Claims struct {
-	Username string `json:"username"`
+	Username    string `json:"username"`
+	CompanyCode string `json:"company_code"`
 	jwt.RegisteredClaims
+}
+
+type Signup struct {
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Email       string `json:"email"`
+	CompanyName string `json:"company_name"`
+	CompanyCode string `json:"company_code"`
 }
