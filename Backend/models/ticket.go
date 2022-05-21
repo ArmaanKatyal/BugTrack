@@ -16,6 +16,7 @@ type Ticket struct {
 	UpdatedOn   primitive.DateTime `json:"updated_on" bson:"updated_on"`
 	ProjectId   primitive.ObjectID `json:"project_id" bson:"project_id"`
 	ProjectName string             `json:"project_name" bson:"project_name"`
+	CompanyCode string             `json:"company_code" bson:"company_code"`
 }
 
 // CreateTicket structs holds the ticket data when creating a new ticket
@@ -31,4 +32,5 @@ type CreateTicket struct {
 	UpdatedOn   primitive.DateTime `json:"updated_on" bson:"updated_on"`
 	ProjectId   primitive.ObjectID `json:"project_id" bson:"project_id"`
 	ProjectName string             `json:"project_name" bson:"project_name"`
+	CompanyCode string             `json:"company_code" bson:"company_code"`
 }

@@ -9,4 +9,5 @@ type Log struct {
 	Date        primitive.DateTime `json:"date" bson:"date"`
 	Description string             `json:"description" bson:"description"`
 	Table       string             `json:"table" bson:"table"`
+	CompanyCode string             `json:"company_code" bson:"company_code"`
 }
