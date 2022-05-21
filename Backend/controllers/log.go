@@ -18,7 +18,7 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is logged in
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	// if the user is not logged in, return 401
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -32,7 +32,7 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 	// slice to store the logs
 	var logs []models.Log
 	// find all the logs
-	cursor, err := coll.Find(context.TODO(), bson.D{})
+	cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

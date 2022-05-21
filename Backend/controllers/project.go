@@ -21,7 +21,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -42,7 +42,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 
 	userColl := client.Database("bugTrack").Collection("users")
 	var user models.User
-	err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}}).Decode(&user)
+	err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}, {"company_code", CompanyCode}}).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -52,7 +52,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	coll := client.Database("bugTrack").Collection("projects")
 	if user.Role == "admin" {
 		// Get the cursor
-		cursor, err := coll.Find(context.TODO(), bson.D{})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -69,8 +69,8 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	} else if user.Role == "product-manager" {
-		filter := bson.D{{"created_by", Author}}
+	} else if user.Role == "project-manager" {
+		filter := bson.D{{"created_by", Author}, {"company_code", CompanyCode}}
 		cursor, err := coll.Find(context.TODO(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -85,7 +85,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if user.Role == "developer" {
-		filter := bson.D{{"assigned_to", Author}}
+		filter := bson.D{{"assigned_to", Author}, {"company_code", CompanyCode}}
 		cursor, err := coll.Find(context.TODO(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -132,7 +132,7 @@ func Project(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -148,7 +148,7 @@ func Project(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	projectID, _ := primitive.ObjectIDFromHex(params["id"])
 	// Get the project by id
-	err = coll.FindOne(context.TODO(), bson.D{{"_id", projectID}}).Decode(&project)
+	err = coll.FindOne(context.TODO(), bson.D{{"_id", projectID}, {"company_code", CompanyCode}}).Decode(&project)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -181,7 +181,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -199,7 +199,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	if verifyAdmin(Author, client) == false {
+	if verifyAdmin(Author, CompanyCode, client) == false {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -243,6 +243,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " created project " + project.Title,
 		Table:       "projects",
+		CompanyCode: CompanyCode,
 	}
 	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)
@@ -283,7 +284,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -311,9 +312,9 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	// Check if the author is an admin or product-manager for the project to be updated only then the project can be updated
-	if verifyAdmin(Author, client) == false {
-		// Check if the user is a product manager for the project
+	// Check if the author is an admin or project-manager for the project to be updated only then the project can be updated
+	if verifyAdmin(Author, CompanyCode, client) == false {
+		// Check if the user is a project manager for the project
 		if verifyProjectManager(Author, projectID, client) == false {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -323,7 +324,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("projects")
 	// filter to update the project with the id provided
-	filter := bson.D{{"_id", projectID}}
+	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
 	update := bson.D{{"$set", project}}
 	// Update the project
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -371,6 +372,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " updated project " + project.Title,
 		Table:       "projects",
+		CompanyCode: CompanyCode,
 	}
 	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)
@@ -413,7 +415,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -430,13 +432,13 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	if verifyAdmin(Author, client) == false { // check if the user is an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // check if the user is an admin
 		w.WriteHeader(http.StatusUnauthorized) // set the status to 401 Unauthorized
 		return
 	}
 	coll := client.Database("bugTrack").Collection("projects")
 	// filter to delete the project with the id provided
-	filter := bson.D{{"_id", projectID}}
+	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
 	// Delete the project
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
@@ -500,6 +502,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " deleted project " + params["id"],
 		Table:       "projects",
+		CompanyCode: CompanyCode,
 	}
 	// insert the log
 	_, err = logColl.InsertOne(context.TODO(), log)

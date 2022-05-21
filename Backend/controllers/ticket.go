@@ -21,7 +21,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -38,9 +38,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userColl := client.Database("bugTrack").Collection("users") // get the users collection
-	filter := bson.D{{"username", Author}}                      // filter to get the user by id
-	var user models.User                                        // create a new user
+	userColl := client.Database("bugTrack").Collection("users")           // get the users collection
+	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}} // filter to get the user by id
+	var user models.User                                                  // create a new user
 	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -54,7 +54,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		// Get the collection
 		coll := client.Database("bugTrack").Collection("tickets")
 		// Get the cursor
-		cursor, err := coll.Find(context.TODO(), bson.D{})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -71,7 +71,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if user.Role == "developer" { // if the user is a developer, get all the tickets assigned to him
 		coll := client.Database("bugTrack").Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", user.Username}})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", user.Username}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -86,7 +86,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if user.Role == "submitter" { // if the user is a submitter, get all the tickets submitted by him
 		coll := client.Database("bugTrack").Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", user.Username}})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", user.Username}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -99,9 +99,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else if user.Role == "product-manager" { // if the user is a product manager, get all the tickets assigned to the project he is in
+	} else if user.Role == "project-manager" { // if the user is a project manager, get all the tickets assigned to the project he is in
 		projectColl := client.Database("bugTrack").Collection("projects")
-		filter := bson.D{{"created_by", Author}}
+		filter := bson.D{{"created_by", Author}, {"company_code", CompanyCode}}
 		var project models.Project
 		err = projectColl.FindOne(context.TODO(), filter).Decode(&project)
 		if err != nil {
@@ -109,7 +109,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		coll := client.Database("bugTrack").Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -143,7 +143,7 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -159,7 +159,8 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	ticketID, _ := primitive.ObjectIDFromHex(params["id"])
 	// Get the project by id
-	err = coll.FindOne(context.TODO(), bson.D{{"_id", ticketID}}).Decode(&ticket)
+	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
+	err = coll.FindOne(context.TODO(), filter).Decode(&ticket)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -192,7 +193,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -239,6 +240,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " created a ticket with the id: " + result.InsertedID.(primitive.ObjectID).Hex(),
 		Table:       "tickets",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
 	if err != nil {                                 // if there is an error
@@ -285,7 +287,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -315,7 +317,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database("bugTrack").Collection("tickets")
 	// filter to update the project with the id provided
-	filter := bson.D{{"_id", ticketID}}
+	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
 	update := bson.D{{"$set", ticket}}
 	// Update the project
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -361,6 +363,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " updated a ticket with the id: " + ticketID.Hex(),
 		Table:       "tickets",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
 	if err != nil {
@@ -401,7 +404,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -420,7 +423,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	client := config.ClientConnection()
 	coll := client.Database("bugTrack").Collection("tickets")
 	// filter to delete the project with the id provided
-	filter := bson.D{{"_id", ticketID}}
+	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
 	// Delete the project
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
@@ -459,6 +462,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: Author + " deleted a ticket with the id: " + ticketID.Hex(),
 		Table:       "tickets",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // insert the log
 	if err != nil {
@@ -513,7 +517,7 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -535,8 +539,8 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets")                   // get the tickets collection
-	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}}) // find the tickets of the project
+	coll := client.Database("bugTrack").Collection("tickets")                                                  // get the tickets collection
+	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}, {"company_code", CompanyCode}}) // find the tickets of the project
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -569,7 +573,7 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -602,7 +606,7 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filter to get the tickets with the status provided
-	filter := bson.D{{"status", typeVal}}
+	filter := bson.D{{"status", typeVal}, {"company_code", CompanyCode}}
 	cursor, err := coll.Find(context.TODO(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -635,7 +639,7 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -668,7 +672,7 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filter to get the tickets with the status provided
-	filter := bson.D{{"priority", typeVal}}
+	filter := bson.D{{"priority", typeVal}, {"company_code", CompanyCode}}
 	cursor, err := coll.Find(context.TODO(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const dbname = "bugTrack"
+
 // AllUsers returns all the users in the database based on the role passed in the url
 func AllUsers(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
@@ -22,7 +24,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -38,7 +40,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -46,11 +48,11 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.User           // Create a new slice of users
 	role := r.URL.Query().Get("role") // Get the role from the request
 
-	coll := client.Database("bugTrack").Collection("users") // Get the users collection
+	coll := client.Database(dbname).Collection("users") // Get the users collection
 	if role == "developer" || role == "project-manager" || role == "submitter" || role == "admin" {
-		filter := bson.D{{"role", role}}                 // Filter to get the users with the role provided
-		cursor, err := coll.Find(context.TODO(), filter) // Get the cursor
-		if err != nil {                                  // If there is an error
+		filter := bson.D{{"role", role}, {"company_code", CompanyCode}} // Filter to get the users with the role provided
+		cursor, err := coll.Find(context.TODO(), filter)                // Get the cursor
+		if err != nil {                                                 // If there is an error
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -66,7 +68,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if role == "" { // If the role is empty then get all the users
 		// Get the cursor
-		cursor, err := coll.Find(context.TODO(), bson.D{})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -104,7 +106,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -114,17 +116,17 @@ func User(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("users")
+	coll := client.Database(dbname).Collection("users")
 	// Get the id from the request
 	params := mux.Vars(r)
 	// Get the project by id
-	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&user)
+	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}, {"company_code", CompanyCode}}).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -157,7 +159,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -173,7 +175,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if UserExists(user.Username) { // Check if the user already exists
+	if UserExists(user.Username, CompanyCode) { // Check if the user already exists
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -181,13 +183,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("users")
+	coll := client.Database(dbname).Collection("users")
 
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
@@ -207,13 +209,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
+	log := models.Log{                                    // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Created user " + user.Username,
 		Table:       "users",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
 	if err != nil {
@@ -260,7 +263,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -288,15 +291,15 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("users")
+	coll := client.Database(dbname).Collection("users")
 	// filter to update the user with the username provided
-	filter := bson.D{{"username", username}}
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}
 	update := bson.D{{"$set", user}}
 	// Update the user
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -336,13 +339,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
+	log := models.Log{                                    // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Updated user " + username,
 		Table:       "users",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
 	if err != nil {                                 // If there is an error
@@ -383,7 +387,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -401,14 +405,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, client) == false { // If the user is not an admin
+	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	coll := client.Database("bugTrack").Collection("users")
+	coll := client.Database(dbname).Collection("users")
 	// filter to delete the user with the username provided
-	filter := bson.D{{"username", username}}
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}
 	// Delete the user
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
@@ -441,13 +445,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Status: "success", // set the status to success
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // Get the logs collection
-	log := models.Log{                                        // Create a new log
+	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
+	log := models.Log{                                    // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
 		Description: "Deleted user " + username,
 		Table:       "users",
+		CompanyCode: CompanyCode,
 	}
 	_, err = logColl.InsertOne(context.TODO(), log) // Insert the log into the database
 	if err != nil {                                 // If there is an error
@@ -483,7 +488,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, err := authenticate(r)
+	_, CompanyCode, err := authenticate(r)
 	if err != nil { // If there is an error
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -498,12 +503,12 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("users")
+	coll := client.Database(dbname).Collection("users")
 	// Get the username from the request
 	params := mux.Vars(r)
 	// find the username in the database
 	var result bson.M // Create a new result
-	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}}).Decode(&result)
+	err = coll.FindOne(context.TODO(), bson.D{{"username", params["username"]}, {"company_code", CompanyCode}}).Decode(&result)
 	// If the username is not found
 	if err == mongo.ErrNoDocuments {
 		// Write the JSON response
@@ -550,7 +555,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, err := authenticate(r)
+	Author, CompanyCode, err := authenticate(r)
 	if err != nil { // If not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -579,9 +584,9 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("users")                          // Get the collection
-	var user models.User                                                             // Create a new user
-	err = coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user) // Find the user in the database
+	coll := client.Database(dbname).Collection("users")                                                             // Get the collection
+	var user models.User                                                                                            // Create a new user
+	err = coll.FindOne(context.TODO(), bson.D{{"username", username}, {"company_code", CompanyCode}}).Decode(&user) // Find the user in the database
 	if err != nil {
 		if err == mongo.ErrNoDocuments { // If the user is not found
 			w.WriteHeader(http.StatusNotFound)
@@ -591,10 +596,10 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdTicketColl := client.Database("bugTrack").Collection("tickets") // Get the ticket collection
+	createdTicketColl := client.Database(dbname).Collection("tickets") // Get the ticket collection
 	// Get the cursor
-	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}}) // Find the tickets created by the user
-	if err != nil {                                                                         // If there is an error
+	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}, {"company_code", CompanyCode}}) // Find the tickets created by the user
+	if err != nil {                                                                                                        // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -606,10 +611,10 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assignedTicketColl := client.Database("bugTrack").Collection("tickets") // Get the tickets collection
+	assignedTicketColl := client.Database(dbname).Collection("tickets") // Get the tickets collection
 	// Get the cursor
-	cursor, err = assignedTicketColl.Find(context.TODO(), bson.D{{"assigned_to", username}}) // Find the tickets assigned to the user
-	if err != nil {                                                                          // If there is an error
+	cursor, err = assignedTicketColl.Find(context.TODO(), bson.D{{"assigned_to", username}, {"company_code", CompanyCode}}) // Find the tickets assigned to the user
+	if err != nil {                                                                                                         // If there is an error
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -626,8 +631,10 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		LastName:        user.LastName,
 		Username:        user.Username,
 		Email:           user.Email,
+		Role:            user.Role,
 		TicketsCreated:  createdTicket,
 		TicketsAssigned: assignedTicket,
+		CompanyCode:     CompanyCode,
 	}
 	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
 	w.WriteHeader(http.StatusOK)                       // Set the status to 200 OK
@@ -639,7 +646,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserExists checks if the user with the given username exists
-func UserExists(username string) bool {
+func UserExists(username string, CompanyCode string) bool {
 	client := config.ClientConnection() // Get the client connection
 	defer func() {
 		// Disconnect the client
@@ -648,10 +655,10 @@ func UserExists(username string) bool {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("users")                           // Get the collection
-	var user models.User                                                              // Create a new user
-	err := coll.FindOne(context.TODO(), bson.D{{"username", username}}).Decode(&user) // Find the user in the database
-	if err != nil {                                                                   // If there is an error
+	coll := client.Database(dbname).Collection("users")                                                              // Get the collection
+	var user models.User                                                                                             // Create a new user
+	err := coll.FindOne(context.TODO(), bson.D{{"username", username}, {"company_code", CompanyCode}}).Decode(&user) // Find the user in the database
+	if err != nil {                                                                                                  // If there is an error
 		if err == mongo.ErrNoDocuments {
 			return false
 		}
@@ -661,11 +668,11 @@ func UserExists(username string) bool {
 }
 
 // verifyAdmin checks if the user is an admin or not
-func verifyAdmin(Author string, client *mongo.Client) bool {
-	userColl := client.Database("bugTrack").Collection("users")   // Get the users collection
-	filter := bson.D{{"username", Author}}                        // Filter to get the user with the username provided
-	var user models.User                                          // Create a new user
-	err := userColl.FindOne(context.TODO(), filter).Decode(&user) // Get the user with the username provided
+func verifyAdmin(Author string, CompanyCode string, client *mongo.Client) bool {
+	userColl := client.Database(dbname).Collection("users")               // Get the users collection
+	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
+	var user models.User                                                  // Create a new user
+	err := userColl.FindOne(context.TODO(), filter).Decode(&user)         // Get the user with the username provided
 
 	if err != nil {
 		return false
@@ -679,7 +686,7 @@ func verifyAdmin(Author string, client *mongo.Client) bool {
 
 // verifyProjectManager checks if the user is a project manager or not
 func verifyProjectManager(Author string, projectID primitive.ObjectID, client *mongo.Client) bool {
-	coll := client.Database("bugTrack").Collection("projects")   // Get the projects collection
+	coll := client.Database(dbname).Collection("projects")       // Get the projects collection
 	filter := bson.D{{"_id", projectID}}                         // Filter to get the project with the project id provided
 	var project models.Project                                   // Create a new project
 	err := coll.FindOne(context.TODO(), filter).Decode(&project) // Get the project with the project id provided
