@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/rs/cors v1.8.2
 	github.com/spf13/viper v1.11.0
+	github.com/stretchr/testify v1.7.1 // indirect
 	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
 )
