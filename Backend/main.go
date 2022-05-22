@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -49,13 +50,22 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	err := http.ListenAndServe(":8080", corsWrapper.Handler(router)) // start the server
+	srv := &http.Server{
+		Handler:      corsWrapper.Handler(router),
+		Addr:         ":8080",
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	err := srv.ListenAndServe()
+	//err := http.ListenAndServe(":8080", corsWrapper.Handler(router)) // start the server
 	if err != nil {
-		return
+		panic(err)
 	}
 
 }
 
+// NotFound is a 404 handler
 func NotFound(w http.ResponseWriter, _ *http.Request) { // 404 handler
 	w.WriteHeader(http.StatusNotFound)
 }
