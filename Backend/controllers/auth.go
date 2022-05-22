@@ -41,7 +41,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// get the collection
-	coll := client.Database("bugTrack").Collection("auth")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("auth")
 	filter := bson.D{{"username", credentials.Username}, {"company_code", credentials.CompanyCode}}
 	// find the user with the given username
 	var user models.DatabaseCreds
@@ -51,7 +51,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userColl := client.Database("bugTrack").Collection("users")
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	filter = bson.D{{"username", credentials.Username}, {"company_code", credentials.CompanyCode}}
 	// find the user with the given username
 	var user2 models.User
@@ -145,7 +145,7 @@ func authenticate(r *http.Request) (string, string, error) {
 	}()
 
 	// get the collection
-	userColl := client.Database("bugTrack").Collection("users")
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	filter := bson.D{{"username", claims.Username}, {"company_code", claims.CompanyCode}}
 	// find the user with the given username
 	var user models.User
@@ -223,7 +223,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the collection
-	coll := client.Database("bugTrack").Collection("auth")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("auth")
 	filter := bson.D{{"username", credentials.Username}, {"company_code", CompanyCode}}
 	Options := bson.D{{"$set", bson.D{{"password", hasedPassword}}}}
 	// update the user password with the new one
@@ -234,7 +234,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a connection to log collection
-	logColl := client.Database("bugTrack").Collection("logs")
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// create a new log
 	log := models.Log{
 		Type:        "Password Change",
@@ -254,7 +254,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json") // set the content type to json
 	w.WriteHeader(http.StatusOK)                       // return 200
-	output := struct { // create the output
+	output := struct {                                 // create the output
 		Message string `json:"message"`
 	}{
 		Message: "success",
@@ -293,7 +293,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// get the collection
-	authColl := client.Database("bugTrack").Collection("auth")
+	authColl := client.Database(config.ViperEnvVariable("dbName")).Collection("auth")
 	// check if the user already exists
 	filter := bson.D{{"username", signup.Username}, {"company_code", signup.CompanyCode}}
 	count, err := authColl.CountDocuments(context.TODO(), filter)
@@ -306,7 +306,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	companyColl := client.Database("bugTrack").Collection("company")
+	companyColl := client.Database(config.ViperEnvVariable("dbName")).Collection("company")
 	filter = bson.D{{"company_code", signup.CompanyCode}}
 	count, err = companyColl.CountDocuments(context.TODO(), filter)
 	if err != nil { // if the count failed return 500
@@ -318,6 +318,16 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	company := models.CreateCompany{
+		Name:        signup.CompanyName,
+		CompanyCode: signup.CompanyCode,
+	}
+	_, err = companyColl.InsertOne(context.TODO(), company)
+	if err != nil { // if the insert failed return 500
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// hash the password
 	cost, _ := strconv.Atoi(config.ViperEnvVariable("BCRYPT_COST"))                  // get the cost of the bcrypt algorithm
 	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(signup.Password), cost) // hash the password
@@ -326,8 +336,9 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	creds := models.Credentials{
-		Username: signup.Username,
-		Password: string(hasedPassword),
+		Username:    signup.Username,
+		Password:    string(hasedPassword),
+		CompanyCode: signup.CompanyCode,
 	}
 	// insert the user
 	_, err = authColl.InsertOne(context.TODO(), creds)
@@ -336,7 +347,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userColl := client.Database("bugTrack").Collection("users")
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	// create the user
 	user := models.CreateUser{
 		Username:    signup.Username,
@@ -355,7 +366,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a connection to log collection
-	logColl := client.Database("bugTrack").Collection("logs")
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// create a new log
 	log := models.Log{
 		Type:        "Admin Created",

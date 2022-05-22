@@ -40,7 +40,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userColl := client.Database("bugTrack").Collection("users")
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	var user models.User
 	err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}, {"company_code", CompanyCode}}).Decode(&user)
 	if err != nil {
@@ -49,7 +49,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("projects")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	if user.Role == "admin" {
 		// Get the cursor
 		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
@@ -143,7 +143,7 @@ func Project(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("projects")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// Get the id from the request
 	params := mux.Vars(r)
 	projectID, _ := primitive.ObjectIDFromHex(params["id"])
@@ -211,7 +211,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("projects")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// Insert the project
 	result, err := coll.InsertOne(context.TODO(), project)
 
@@ -235,7 +235,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a connection to log collection
-	logColl := client.Database("bugTrack").Collection("logs")
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// create a new log
 	log := models.Log{
 		Type:        "Create",
@@ -322,7 +322,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("projects")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// filter to update the project with the id provided
 	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
 	update := bson.D{{"$set", project}}
@@ -364,7 +364,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a connection to log collection
-	logColl := client.Database("bugTrack").Collection("logs")
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// create a new log
 	log := models.Log{
 		Type:        "Update",
@@ -436,7 +436,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized) // set the status to 401 Unauthorized
 		return
 	}
-	coll := client.Database("bugTrack").Collection("projects")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// filter to delete the project with the id provided
 	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
 	// Delete the project
@@ -494,7 +494,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a connection to log collection
-	logColl := client.Database("bugTrack").Collection("logs")
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// create a new log
 	log := models.Log{
 		Type:        "Delete",

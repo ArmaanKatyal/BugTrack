@@ -38,9 +38,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userColl := client.Database("bugTrack").Collection("users")           // get the users collection
-	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}} // filter to get the user by id
-	var user models.User                                                  // create a new user
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // get the users collection
+	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}              // filter to get the user by id
+	var user models.User                                                               // create a new user
 	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -52,7 +52,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 
 	if user.Role == "admin" { // if the user is an admin, get all the tickets
 		// Get the collection
-		coll := client.Database("bugTrack").Collection("tickets")
+		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 		// Get the cursor
 		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 		if err != nil {
@@ -70,7 +70,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if user.Role == "developer" { // if the user is a developer, get all the tickets assigned to him
-		coll := client.Database("bugTrack").Collection("tickets")
+		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", user.Username}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -85,7 +85,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if user.Role == "submitter" { // if the user is a submitter, get all the tickets submitted by him
-		coll := client.Database("bugTrack").Collection("tickets")
+		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", user.Username}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if user.Role == "project-manager" { // if the user is a project manager, get all the tickets assigned to the project he is in
-		projectColl := client.Database("bugTrack").Collection("projects")
+		projectColl := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 		filter := bson.D{{"created_by", Author}, {"company_code", CompanyCode}}
 		var project models.Project
 		err = projectColl.FindOne(context.TODO(), filter).Decode(&project)
@@ -108,7 +108,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		coll := client.Database("bugTrack").Collection("tickets")
+		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 		cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -154,7 +154,7 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// Get the id from the request
 	params := mux.Vars(r)
 	ticketID, _ := primitive.ObjectIDFromHex(params["id"])
@@ -213,7 +213,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// Insert the project
 	result, err := coll.InsertOne(context.TODO(), ticket)
 
@@ -233,8 +233,8 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{                                        // create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
+	log := models.Log{                                                               // create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -315,7 +315,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// filter to update the project with the id provided
 	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
 	update := bson.D{{"$set", ticket}}
@@ -356,8 +356,8 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{                                        // create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
+	log := models.Log{                                                               // create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -421,7 +421,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// filter to delete the project with the id provided
 	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
 	// Delete the project
@@ -455,8 +455,8 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 		Status: "success",
 	}
 
-	logColl := client.Database("bugTrack").Collection("logs") // get the logs collection
-	log := models.Log{                                        // create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
+	log := models.Log{                                                               // create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -498,7 +498,7 @@ func DeleteProjectTickets(projectID primitive.ObjectID) bool {
 			return
 		}
 	}()
-	coll := client.Database("bugTrack").Collection("tickets")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// filter to delete the project with the id provided
 	filter := bson.D{{"project_id", projectID}}
 	// Delete the project
@@ -539,7 +539,7 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets")                                                  // get the tickets collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")                           // get the tickets collection
 	cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", projectID}, {"company_code", CompanyCode}}) // find the tickets of the project
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -587,7 +587,7 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets") // get the tickets collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets") // get the tickets collection
 
 	// Get the query parameters
 	queryParams := r.URL.Query() // get the query parameters
@@ -653,7 +653,7 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database("bugTrack").Collection("tickets") // get the tickets collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets") // get the tickets collection
 
 	// Get the query parameters
 	queryParams := r.URL.Query() // get the query parameters

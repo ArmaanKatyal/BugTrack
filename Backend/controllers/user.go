@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-const dbname = "bugTrack"
-
 // AllUsers returns all the users in the database based on the role passed in the url
 func AllUsers(w http.ResponseWriter, r *http.Request) {
 	// Check if the request method is GET or not
@@ -48,7 +46,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.User           // Create a new slice of users
 	role := r.URL.Query().Get("role") // Get the role from the request
 
-	coll := client.Database(dbname).Collection("users") // Get the users collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
 	if role == "developer" || role == "project-manager" || role == "submitter" || role == "admin" {
 		filter := bson.D{{"role", role}, {"company_code", CompanyCode}} // Filter to get the users with the role provided
 		cursor, err := coll.Find(context.TODO(), filter)                // Get the cursor
@@ -122,7 +120,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database(dbname).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	// Get the id from the request
 	params := mux.Vars(r)
 	// Get the project by id
@@ -189,7 +187,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database(dbname).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 
 	// Insert the user into the database
 	result, err := coll.InsertOne(context.TODO(), user)
@@ -209,8 +207,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
-	log := models.Log{                                    // Create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
+	log := models.Log{                                                               // Create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -297,7 +295,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database(dbname).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	// filter to update the user with the username provided
 	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}
 	update := bson.D{{"$set", user}}
@@ -339,8 +337,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
-	log := models.Log{                                    // Create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
+	log := models.Log{                                                               // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -410,7 +408,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	coll := client.Database(dbname).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	// filter to delete the user with the username provided
 	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}
 	// Delete the user
@@ -445,8 +443,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Status: "success", // set the status to success
 	}
 
-	logColl := client.Database(dbname).Collection("logs") // Get the logs collection
-	log := models.Log{                                    // Create a new log
+	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
+	log := models.Log{                                                               // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -503,7 +501,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	// Get the collection
-	coll := client.Database(dbname).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
 	// Get the username from the request
 	params := mux.Vars(r)
 	// find the username in the database
@@ -531,7 +529,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// if the username already exists
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusConflict)
 		output := struct { // Create a new output
 			Exists bool `json:"exists"`
 		}{
@@ -584,7 +582,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	coll := client.Database(dbname).Collection("users")                                                             // Get the collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")                                  // Get the collection
 	var user models.User                                                                                            // Create a new user
 	err = coll.FindOne(context.TODO(), bson.D{{"username", username}, {"company_code", CompanyCode}}).Decode(&user) // Find the user in the database
 	if err != nil {
@@ -596,7 +594,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdTicketColl := client.Database(dbname).Collection("tickets") // Get the ticket collection
+	createdTicketColl := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets") // Get the ticket collection
 	// Get the cursor
 	cursor, err := createdTicketColl.Find(context.TODO(), bson.D{{"created_by", username}, {"company_code", CompanyCode}}) // Find the tickets created by the user
 	if err != nil {                                                                                                        // If there is an error
@@ -611,7 +609,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assignedTicketColl := client.Database(dbname).Collection("tickets") // Get the tickets collection
+	assignedTicketColl := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets") // Get the tickets collection
 	// Get the cursor
 	cursor, err = assignedTicketColl.Find(context.TODO(), bson.D{{"assigned_to", username}, {"company_code", CompanyCode}}) // Find the tickets assigned to the user
 	if err != nil {                                                                                                         // If there is an error
@@ -655,7 +653,7 @@ func UserExists(username string, CompanyCode string) bool {
 		}
 	}()
 
-	coll := client.Database(dbname).Collection("users")                                                              // Get the collection
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")                                   // Get the collection
 	var user models.User                                                                                             // Create a new user
 	err := coll.FindOne(context.TODO(), bson.D{{"username", username}, {"company_code", CompanyCode}}).Decode(&user) // Find the user in the database
 	if err != nil {                                                                                                  // If there is an error
@@ -669,10 +667,10 @@ func UserExists(username string, CompanyCode string) bool {
 
 // verifyAdmin checks if the user is an admin or not
 func verifyAdmin(Author string, CompanyCode string, client *mongo.Client) bool {
-	userColl := client.Database(dbname).Collection("users")               // Get the users collection
-	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
-	var user models.User                                                  // Create a new user
-	err := userColl.FindOne(context.TODO(), filter).Decode(&user)         // Get the user with the username provided
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}              // Filter to get the user with the username provided
+	var user models.User                                                               // Create a new user
+	err := userColl.FindOne(context.TODO(), filter).Decode(&user)                      // Get the user with the username provided
 
 	if err != nil {
 		return false
@@ -686,10 +684,10 @@ func verifyAdmin(Author string, CompanyCode string, client *mongo.Client) bool {
 
 // verifyProjectManager checks if the user is a project manager or not
 func verifyProjectManager(Author string, projectID primitive.ObjectID, client *mongo.Client) bool {
-	coll := client.Database(dbname).Collection("projects")       // Get the projects collection
-	filter := bson.D{{"_id", projectID}}                         // Filter to get the project with the project id provided
-	var project models.Project                                   // Create a new project
-	err := coll.FindOne(context.TODO(), filter).Decode(&project) // Get the project with the project id provided
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects") // Get the projects collection
+	filter := bson.D{{"_id", projectID}}                                              // Filter to get the project with the project id provided
+	var project models.Project                                                        // Create a new project
+	err := coll.FindOne(context.TODO(), filter).Decode(&project)                      // Get the project with the project id provided
 	if err != nil {
 		return false
 	}
@@ -734,10 +732,10 @@ func Lock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userColl := client.Database(dbname).Collection("users")                 // Get the users collection
-	filter := bson.D{{"username", username}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
-	update := bson.D{{"$set", bson.D{{"locked", true}}}}                    // Update the user with the locked field set to true
-	_, err = userColl.UpdateOne(context.TODO(), filter, update)             // Update the user with the locked field set to true
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}            // Filter to get the user with the username provided
+	update := bson.D{{"$set", bson.D{{"locked", true}}}}                               // Update the user with the locked field set to true
+	_, err = userColl.UpdateOne(context.TODO(), filter, update)                        // Update the user with the locked field set to true
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -791,10 +789,10 @@ func UnLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userColl := client.Database(dbname).Collection("users")                 // Get the users collection
-	filter := bson.D{{"username", username}, {"company_code", CompanyCode}} // Filter to get the user with the username provided
-	update := bson.D{{"$set", bson.D{{"locked", false}}}}                   // Update the user with the locked field set to false
-	_, err = userColl.UpdateOne(context.TODO(), filter, update)             // Update the user with the locked field set to false
+	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}            // Filter to get the user with the username provided
+	update := bson.D{{"$set", bson.D{{"locked", false}}}}                              // Update the user with the locked field set to false
+	_, err = userColl.UpdateOne(context.TODO(), filter, update)                        // Update the user with the locked field set to false
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -28,7 +28,7 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 	// create the client connection
 	client := config.ClientConnection()
 	// get the collection
-	coll := client.Database("bugTrack").Collection("logs")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
 	// slice to store the logs
 	var logs []models.Log
 	// find all the logs
