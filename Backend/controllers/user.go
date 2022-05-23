@@ -165,15 +165,15 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body) // Create a new decoder
 	// Create a new user
-	var user models.CreateUser
+	var userDatafromAdmin models.UserDatafromAdmin
 	// Decode the request body into the new user
-	err = decoder.Decode(&user)
+	err = decoder.Decode(&userDatafromAdmin)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if UserExists(user.Username, CompanyCode) { // Check if the user already exists
+	if UserExists(userDatafromAdmin.Username, CompanyCode) { // Check if the user already exists
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -187,32 +187,49 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the collection
-	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	InsertUser := models.CreateUser{ // Create a new user
+		FirstName:   userDatafromAdmin.FirstName,
+		LastName:    userDatafromAdmin.LastName,
+		Username:    userDatafromAdmin.Username,
+		Email:       userDatafromAdmin.Email,
+		Role:        userDatafromAdmin.Role,
+		CreatedOn:   userDatafromAdmin.CreatedOn,
+		CompanyCode: CompanyCode,
+		Locked:      userDatafromAdmin.Locked,
+	}
 
 	// Insert the user into the database
-	result, err := coll.InsertOne(context.TODO(), user)
+	result, err := coll.InsertOne(context.TODO(), InsertUser)
 
 	if err != nil { // If there is an error
-		output := struct { // Create a new output
-			Status string `json:"status"`
-		}{
-			Status: "error",
-		}
-		w.Header().Set("Content-Type", "application/json") // Set the content type
-		w.WriteHeader(http.StatusInternalServerError)      // Write the status code
-		err = json.NewEncoder(w).Encode(output)            // Encode the output
-		if err != nil {
-			return
-		}
+		w.WriteHeader(http.StatusInternalServerError) // Write the status code // Encode the output
+		return
+	}
+
+	authColl := client.Database(config.ViperEnvVariable("dbName")).Collection("auth") // Get the collection
+	hashedPass, err := HashedPassword(userDatafromAdmin.Password)                     // Hash the password
+	if err != nil {                                                                   // If there is an error
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	InsertAuth := models.Credentials{ // Create a new auth
+		Username:    userDatafromAdmin.Username,
+		Password:    hashedPass,
+		CompanyCode: CompanyCode,
+	}
+	_, err = authColl.InsertOne(context.TODO(), InsertAuth) // Insert the auth into the database
+	if err != nil {                                         // If there is an error
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
-		Type:        "Create",
+	log := models.Log{ // Create a new log
+		Type:        "User Created",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
-		Description: "Created user " + user.Username,
+		Description: "Created user " + userDatafromAdmin.Username,
 		Table:       "users",
 		CompanyCode: CompanyCode,
 	}
@@ -338,7 +355,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -444,7 +461,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
