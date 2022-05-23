@@ -408,3 +408,16 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// The user can use that password to login again
 
 }
+
+func HashedPassword(password string) (string, error) {
+	// This will hash the password and return it
+	cost, err := strconv.Atoi(config.ViperEnvVariable("BCRYPT_COST"))
+	if err != nil {
+		return "", err
+	}
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), cost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPass), nil
+}
