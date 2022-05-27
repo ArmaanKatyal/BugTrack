@@ -188,7 +188,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	InsertUser := models.CreateUser{ // Create a new user
+	InsertUser := models.CreateUser{                                               // Create a new user
 		FirstName:   userDatafromAdmin.FirstName,
 		LastName:    userDatafromAdmin.LastName,
 		Username:    userDatafromAdmin.Username,
@@ -225,7 +225,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "User Created",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -355,7 +355,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -461,7 +461,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),

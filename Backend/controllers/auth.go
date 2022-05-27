@@ -78,7 +78,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the expiration time
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(time.Hour)
 	// create the claims that contain the information carried by the token
 	//claims := &models.Claims{
 	//	Username: credentials.Username,
@@ -104,13 +104,31 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the cookie with the token
-	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
-		Value:   tokenString,
-		Expires: expirationTime,
-	})
-
+	//set the cookie with the token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	output := struct {
+		Message string `json:"message"`
+		Token   string `json:"token"`
+	}{
+		Message: "success",
+		Token:   tokenString,
+	}
+	err = json.NewEncoder(w).Encode(output)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	//http.SetCookie(w, &http.Cookie{
+	//	Name:     "token",
+	//	Value:    tokenString,
+	//	Expires:  expirationTime,
+	//	MaxAge:   int(time.Hour * 24),
+	//	Path:     "/auth/login",
+	//	Secure:   true,
+	//	SameSite: http.SameSiteLaxMode,
+	//	HttpOnly: false,
+	//})
 }
 
 // authenticate checks if the jwt token/User is valid or not
@@ -254,7 +272,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json") // set the content type to json
 	w.WriteHeader(http.StatusOK)                       // return 200
-	output := struct {                                 // create the output
+	output := struct { // create the output
 		Message string `json:"message"`
 	}{
 		Message: "success",

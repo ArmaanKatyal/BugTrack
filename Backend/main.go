@@ -46,7 +46,7 @@ func main() {
 	corsWrapper := cors.New(cors.Options{ // create a new cors wrapper
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "token", "Set-Cookie"},
 		AllowCredentials: true,
 	})
 
