@@ -39,7 +39,7 @@ func main() {
 	router.HandleFunc("/api/v1/auth/logout", controllers.UserLogout).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/changePassword", controllers.ChangePassword).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/forgotPassword", controllers.ForgotPassword).Methods("POST", "OPTIONS")
-	router.Path("/api/v1/auth/signup").Queries("role", "{role}").HandlerFunc(controllers.Signup).Methods("POST", "OPTIONS")
+	router.HandleFunc("/api/v1/auth/signup", controllers.Signup).Methods("POST")
 	router.HandleFunc("/api/v1/logs", controllers.AllLogs).Methods("GET")
 	router.NotFoundHandler = http.HandlerFunc(NotFound) // set the 404 handler
 
