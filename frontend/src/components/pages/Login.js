@@ -11,6 +11,16 @@ function Login() {
   const [password, setPassword] = useState("");
   const [companyCode, setCompanyCode] = useState("");
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const alert = () => {
+    setShow(true);
+  };
+
+  const disableButton = () => {
+    setButtonDisabled(true);
+  };
+
   const login = async () => {
     if (!username || !password) {
       return;
@@ -27,23 +37,35 @@ function Login() {
           document.cookie = `token=${res.data.token}`;
           window.location.href = "/dashboard";
         } else {
-          alert("Invalid credentials");
+          alert();
           setUsername("");
           setPassword("");
           setCompanyCode("");
-          setButtonDisabled(false);
+          disableButton();
         }
       });
     } catch (err) {
+        alert();
       setUsername("");
       setPassword("");
       setCompanyCode("");
-      setButtonDisabled(false);
+      disableButton();
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-100">
+        {/* {show && (<div className="bg-yellow-100 w-fit rounded-2xl flex flex-col justify-center items-center px-2 transition shadow-2xl">
+            <h2 className="text-2xl text-black m-3">Wrong Username or Password</h2>
+        </div>)} */}
+        {show && (
+            <div class="flex p-4 mb-4 text-sm text-yellow-700 bg-yellow-100 rounded-lg dark:bg-yellow-200 dark:text-yellow-800" role="alert">
+            <svg class="inline flex-shrink-0 mr-3 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            <div>
+              <span class="font-medium">Warning alert!</span> Wrong Username, Password or Company Code.
+            </div>
+          </div>
+        )}
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
         <div className="bg-white rounded-2xl shadow-2xl flex w-2/3 max-w-4xl">
           <div className="w-3/5 p-5">
@@ -56,13 +78,13 @@ function Login() {
               </h2>
               <div className="border-2 w-10 border-green-600 inline-block mb-2"></div>
               <div className="flex flex-col items-center my-5">
-                <div className="bg-gray-100 w-64 p-2 flex items-center mb-2">
+                <div className="bg-gray-100 w-64 p-2 flex items-center mb-2 outline-none">
                   <FaUser className="text-gray-400 m-2"></FaUser>
                   <input
                     type="text"
                     name="username"
                     placeholder="Username"
-                    className="bg-gray-100 outline-none text-sm flex-1"
+                    className="bg-gray-100 outline-none text-sm flex-1 border-transparent focus:border-transparent focus:ring-0"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   ></input>
@@ -75,7 +97,7 @@ function Login() {
                     type="text"
                     name="companyCode"
                     placeholder="Company Code"
-                    className="bg-gray-100 outline-none text-sm flex-1"
+                    className="bg-gray-100 outline-none text-sm flex-1 border-transparent focus:border-transparent focus:ring-0"
                     value={companyCode}
                     onChange={(e) => setCompanyCode(e.target.value)}
                   ></input>
@@ -88,7 +110,7 @@ function Login() {
                     type="password"
                     name="password"
                     placeholder="Password"
-                    className="bg-gray-100 outline-none text-sm flex-1"
+                    className="bg-gray-100 outline-none text-sm flex-1 border-transparent focus:border-transparent focus:ring-0"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   ></input>
@@ -116,7 +138,7 @@ function Login() {
             <h2 className="text-3xl font-bold mb-2">Hello, Friend!</h2>
             <div className="border-2 w-10 border-white inline-block mb-2"></div>
             <p className="mb-10">
-              Fill up personal information and start journey with us
+              Register your company to get started with bugTrack.
             </p>
             <Link
               to={"/signup"}
