@@ -189,13 +189,22 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	// Create a new project
-	var project models.CreateProject
+	var project models.CreateProject2
 	// Decode the request body into the new project
 	err = decoder.Decode(&project)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	var createProject models.CreateProject
+
+	createProject.Title = project.Title
+	createProject.Description = project.Description
+	createProject.AssignedTo = []string{}
+	createProject.CreatedBy = Author
+	createProject.CompanyCode = CompanyCode
+	createProject.CreatedOn = primitive.NewDateTimeFromTime(time.Now())
 
 	// Get the client connection
 	client := config.ClientConnection()
@@ -213,7 +222,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// Insert the project
-	result, err := coll.InsertOne(context.TODO(), project)
+	result, err := coll.InsertOne(context.TODO(), createProject)
 
 	if err != nil {
 		// if there is an error
