@@ -7,6 +7,7 @@ import Tickets from './components/pages/Tickets'
 import UserManagement from './components/pages/UserManage'
 import SystemLogs from './components/pages/SystemLogs'
 import Logout from './components/pages/Logout'
+import ProjectTickets from './components/pages/ProjectTickets'
 function App() {
   return (
     <div className='App'>
@@ -18,6 +19,7 @@ function App() {
         <Route path='/user-management' element={<UserManagement />} />
         <Route path='/system-logs' element={<SystemLogs />} />
         <Route path='/logout' element={<Logout />}/>
+        <Route path='/project/:id' element={<ProjectTickets />} />
       </Routes>
     </div>
   )
