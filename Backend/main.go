@@ -35,6 +35,7 @@ func main() {
 	router.HandleFunc("/api/v1/user/profile/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UserProfile).Methods("GET")
 	router.HandleFunc("/api/v1/user/lock/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.Lock).Methods("POST")
 	router.HandleFunc("/api/v1/user/unlock/{username:[A-Za-z][A-Za-z0-9_]{7,29}}", controllers.UnLock).Methods("POST")
+	router.HandleFunc("/api/v1/user/role", controllers.GetUserRole).Methods("GET")
 	router.HandleFunc("/api/v1/auth/login", controllers.UserLogin).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/logout", controllers.UserLogout).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/changePassword", controllers.ChangePassword).Methods("POST", "OPTIONS")
