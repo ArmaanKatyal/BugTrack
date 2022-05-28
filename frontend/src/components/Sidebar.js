@@ -12,7 +12,7 @@ const menuItems = [
 
 function Sidebar() {
   return (
-    <div className="w-60 h-full shadow-2xl bg-white px-1 absolute">
+    <div className="w-60 h-full shadow-2xl bg-white px-1 absolute font-sans-new">
       <ul className="relative mt-10">
         {menuItems.map((item) => {
           return (

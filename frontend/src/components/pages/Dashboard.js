@@ -1,6 +1,7 @@
 import React from "react";
 import axios from "axios";
 import Sidebar from "../Sidebar";
+import ProjectCard from "../ProjectCard";
 
 const apiPath = "http://localhost:8080/api/v1";
 
@@ -32,9 +33,12 @@ function Dashboard() {
   return (
     <>
       <Sidebar />
-      <div className="flex flex-col bg-blue-500 h-72 pl-60">
-        <div className="flex flex-col h-full mt-12 pl-36">
-          <h1 className="text-3xl text-white">Dashboard</h1>
+      <div className="flex flex-col bg-blue-500 pl-60 h-72 shadow-xl">
+        <div className="relative flex flex-col items-center">
+          <div className="flex flex-col h-full mt-12 pl-36 self-start">
+            <h1 className="text-3xl font-sans-new text-white">Dashboard</h1>
+          </div>
+          <ProjectCard dashData={data}/>
         </div>
       </div>
     </>

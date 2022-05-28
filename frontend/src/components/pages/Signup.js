@@ -68,7 +68,7 @@ function Signup() {
     };
 
   return (
-    <div className="flex flex-col items-center bg-gray-100 py-2 min-h-screen">
+    <div className="flex flex-col items-center bg-gray-100 py-2 min-h-screen font-sans-new">
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center py-10">
           <div className="bg-white rounded-2xl shadow-2xl flex items-center flex-col max-w-4xl w-2/3">
             <div className="py-10">
