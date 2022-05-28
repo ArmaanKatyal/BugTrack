@@ -272,7 +272,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json") // set the content type to json
 	w.WriteHeader(http.StatusOK)                       // return 200
-	output := struct { // create the output
+	output := struct {                                 // create the output
 		Message string `json:"message"`
 	}{
 		Message: "success",
