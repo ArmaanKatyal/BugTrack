@@ -22,3 +22,12 @@ type CreateProject struct {
 	AssignedTo  []string           `json:"assigned_to" bson:"assigned_to"`
 	CompanyCode string             `json:"company_code" bson:"company_code"`
 }
+
+type CreateProject2 struct {
+	Title       string `json:"title" bson:"title"`
+	Description string `json:"description" bson:"description"`
+	//CreatedBy   string `json:"created_by" bson:"created_by"`
+	//CreatedOn   primitive.DateTime `json:"created_on" bson:"created_on"`
+	//AssignedTo  []string `json:"assigned_to" bson:"assigned_to"`
+	//CompanyCode string   `json:"company_code" bson:"company_code"`
+}
