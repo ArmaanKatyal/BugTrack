@@ -81,6 +81,14 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		popIndex := 0
+		for index, user := range users {
+			if user.Role == "admin" {
+				popIndex = index
+			}
+		}
+		users = append(users[:popIndex], users[popIndex+1:]...)
+
 	} else { // If the role is not valid
 		w.WriteHeader(http.StatusBadRequest)
 		return
