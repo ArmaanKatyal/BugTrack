@@ -205,6 +205,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	createProject.CreatedBy = Author
 	createProject.CompanyCode = CompanyCode
 	createProject.CreatedOn = primitive.NewDateTimeFromTime(time.Now())
+	createProject.ProjectManager = ""
 
 	// Get the client connection
 	client := config.ClientConnection()
