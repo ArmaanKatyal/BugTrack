@@ -10,21 +10,57 @@ function UpdateProjectModal(props) {
     const [created_on, setCreated_on] = React.useState(props.item.created_on);
     const [assigned_to, setAssigned_to] = React.useState(props.item.assigned_to);
     const [company_code, setCompany_code] = React.useState(props.item.company_code);
-    const [project_manager, setProject_manager] = React.useState(props.item.project_manager);
+    const [project_manager, setProject_manager] = React.useState(
+        props.item.project_manager
+    );
     const [objects, setObjects] = React.useState([]);
     const [selected, setSelectedObjects] = React.useState([]);
 
-    for (var i = 0; i < props.users.length; i++) {
-        objects.push({
-            username: props.users[i].username,
-        });
-    }
+    const updateProject = async () => {
+        var data = {
+            id: id,
+            title: title,
+            description: description,
+            created_by: created_by,
+            created_on: created_on,
+            assigned_to: assigned_to,
+            company_code: company_code,
+            project_manager: project_manager,
+        };
+        var config = {
+            headers: {
+                "Content-Type": "application/json",
+                token: document.cookie.split("=")[1],
+            },
+        };
+        if (window.confirm("Are you sure you want to update this project?")) {
+        await axios
+            .put(apiPath + "/project/update/" + props.projectId, data, config)
+            .then((res) => {
+                if (res.status === 200) {
+                    window.location.href = "/dashboard";
+                } else {
+                    alert("Error");
+                }
+            });
+        }
+    };
 
     for (var i = 0; i < props.item.assigned_to.length; i++) {
         selected.push({
             username: props.item.assigned_to[i],
         });
     }
+
+    React.useEffect(() => {
+
+        for (var i = 0; i < props.users.length; i++) {
+            objects.push({
+                username: props.users[i].username,
+            });
+        }
+
+    }, []);
 
     const onSelect = (selectedList) => {
         var selectedArray = [];
@@ -67,7 +103,7 @@ function UpdateProjectModal(props) {
                                 className="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
                                 id="exampleInput7"
                                 placeholder="Title"
-                                value={props.item.title}
+                                value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
                         </div>
@@ -77,7 +113,7 @@ function UpdateProjectModal(props) {
                                 id="exampleFormControlTextarea13"
                                 rows="3"
                                 placeholder="Message"
-                                value={props.item.description}
+                                value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                             ></textarea>
                         </div>
@@ -102,9 +138,9 @@ function UpdateProjectModal(props) {
                                     aria-label="Default select example"
                                     onChange={(e) => setProject_manager(e.target.value)}
                                 >
-                                    <option defaultValue >Select Project Manager</option>
+                                    <option defaultValue>Select Project Manager</option>
                                     {props.users.map((user) => (
-                                        <option key={user.id} value={user.id}>
+                                        <option key={user.username} value={user.username}>
                                             {user.username}
                                         </option>
                                     ))}
@@ -113,7 +149,7 @@ function UpdateProjectModal(props) {
                         </div>
                         <div>
                             <div className="mb-3 xl:w-96">
-                                <Multiselect 
+                                <Multiselect
                                     options={objects}
                                     displayValue="username"
                                     showCheckbox={true}
@@ -134,7 +170,7 @@ function UpdateProjectModal(props) {
                         </button>
                         <button
                             type="button"
-                            // onClick={handleSubmit}
+                            onClick={updateProject}
                             className="inline-block px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out ml-1"
                         >
                             Update
