@@ -7,6 +7,11 @@ const apiPath = "http://localhost:8080/api/v1";
 
 function Dashboard() {
     const [data, setData] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    const toggleLoading = () => {
+        setLoading(!loading);
+    };
     const dashboard = async () => {
         try {
             var config = {
@@ -16,6 +21,7 @@ function Dashboard() {
                 },
             };
             await axios.get(apiPath + "/project", config).then((res) => {
+                toggleLoading();
                 setData(res.data);
             });
         } catch (err) {
@@ -34,6 +40,16 @@ function Dashboard() {
         <>
             <Sidebar />
             <div className="flex flex-col bg-blue-500 pl-60 h-72 shadow-xl">
+            {loading && (
+                        <div class="ml-5 mt-5">
+                            <div
+                                class="spinner-border animate-spin text-white inline-block w-10 h-10 border-3 rounded-full self-start"
+                                role="status"
+                            >
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    )}
                 <div className="relative flex flex-col items-center">
                     <div className="flex flex-col h-full mt-12 pl-36 self-start">
                         <h1 className="text-3xl font-sans-new text-white">Dashboard</h1>
