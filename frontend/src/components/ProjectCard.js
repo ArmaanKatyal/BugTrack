@@ -9,6 +9,7 @@ function ProjectCard(props) {
     const [description, setDescription] = React.useState("");
     const [userRole, setUserRole] = React.useState("");
     const [userData, setUserData] = React.useState([]);
+
     const handleSubmit = async () => {
         try {
             var config = {
@@ -123,21 +124,22 @@ function ProjectCard(props) {
                                     ></button>
                                 </div>
                                 <div className="modal-body relative p-4">
-                                    <div className="bg-gray-200 w-64 p-2 flex items-center mb-2 outline-none rounded-lg">
+                                    <div className="form-group mb-6">
                                         <input
                                             type="text"
-                                            name="title"
+                                            className="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                                            id="exampleInput7"
                                             placeholder="Title"
-                                            className="bg-gray-200 outline-none text-sm flex-1 border-transparent focus:border-transparent focus:ring-0"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
-                                        ></input>
+                                        />
                                     </div>
-                                    <div className="bg-gray-200 w-64 p-2 flex items-center mb-2 outline-none rounded-lg">
+                                    <div className="form-group mb-6">
                                         <textarea
-                                            name="description"
-                                            placeholder="Description"
-                                            className="bg-gray-200 outline-none text-sm flex-1 border-transparent focus:border-transparent focus:ring-0"
+                                            className=" form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                                            id="exampleFormControlTextarea13"
+                                            rows="3"
+                                            placeholder="Message"
                                             value={description}
                                             onChange={(e) =>
                                                 setDescription(e.target.value)
