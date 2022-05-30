@@ -2,12 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import UpdateProjectModal from "./UpdateProjectModal";
+import DeleteProjectModal from "./DeleteProjectModal";
 
 const apiPath = "http://localhost:8080/api/v1";
 
 function ProjectItem(props) {
     return (
-        <tr className="border-b">
+        <tr className="border-b hover:shadow-sm">
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 <Link to={`/project/${props.projectId}`} className="text-purple-600">
                     {props.item.title}
@@ -50,12 +51,15 @@ function ProjectItem(props) {
                     )}
                     {props.role === "admin" && (
                         <li>
-                            <a
+                            <button
                                 className=" dropdown-item text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700 hover:bg-gray-100"
-                                href="#"
+                                data-bs-toggle="modal"
+                                    data-bs-target={
+                                        "#deletestaticBackdrop" + props.projectId
+                                    }
                             >
                                 Delete
-                            </a>
+                            </button>
                         </li>
                     )}
                 </ul>
@@ -64,6 +68,10 @@ function ProjectItem(props) {
                 projectId={props.projectId}
                 item={props.item}
                 users={props.users}
+            />
+            <DeleteProjectModal 
+                projectId={props.projectId}
+                item={props.item}
             />
         </tr>
     );
