@@ -334,7 +334,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// filter to update the project with the id provided
-	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
+	filter := bson.D{{"_id", projectID}}
 	update := bson.D{{"$set", project}}
 	// Update the project
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -448,7 +448,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
 	// filter to delete the project with the id provided
-	filter := bson.D{{"_id", projectID}, {"companyCode", CompanyCode}}
+	filter := bson.D{{"_id", projectID}}
 	// Delete the project
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
