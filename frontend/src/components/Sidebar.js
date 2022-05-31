@@ -10,7 +10,7 @@ const menuItems = [
     { id: 4, name: "System Logs", link: "/system-logs", icon: MdSettingsBackupRestore },
 ];
 
-function Sidebar() {
+function Sidebar(props) {
     return (
         <div className="w-60 h-full shadow-2xl bg-white px-1 absolute font-sans-new">
             <ul className="relative mt-10">
