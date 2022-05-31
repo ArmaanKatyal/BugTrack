@@ -34,3 +34,13 @@ type CreateTicket struct {
 	ProjectName string             `json:"project_name" bson:"project_name"`
 	CompanyCode string             `json:"company_code" bson:"company_code"`
 }
+
+type CreateTicket2 struct {
+	Title       string             `json:"title" bson:"title"`
+	Description string             `json:"description" bson:"description"`
+	Priority    string             `json:"priority" bson:"priority"`
+	ProjectId   primitive.ObjectID `json:"project_id" bson:"project_id"`
+	ProjectName string             `json:"project_name" bson:"project_name"`
+	AssignedTo  []string           `json:"assigned_to" bson:"assigned_to"`
+	Tags        []string           `json:"tags" bson:"tags"`
+}
