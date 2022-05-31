@@ -89,6 +89,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	claims := &models.Claims{
 		Username:    credentials.Username,
 		CompanyCode: credentials.CompanyCode,
+		Role:        user2.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
@@ -132,7 +133,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 // authenticate checks if the jwt token/User is valid or not
-func authenticate(r *http.Request) (string, string, error) {
+func authenticate(r *http.Request) (string, string, string, error) {
 	// get the token from the header of the request
 	authToken := r.Header.Get("token")
 	// create the claims
@@ -145,13 +146,13 @@ func authenticate(r *http.Request) (string, string, error) {
 	if err != nil {
 		// if the signature is invalid return an error
 		if err == jwt.ErrSignatureInvalid {
-			return "", "", err
+			return "", "", "", err
 		}
-		return "", "", err
+		return "", "", "", err
 	}
 	// if the token is invalid return an error
 	if !token.Valid {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	client := config.ClientConnection()
@@ -169,15 +170,15 @@ func authenticate(r *http.Request) (string, string, error) {
 	var user models.User
 	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if user.Locked == true {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	// if the token is valid return the username
-	return claims.Username, claims.CompanyCode, nil
+	return claims.Username, claims.CompanyCode, claims.Role, nil
 }
 
 // UserLogout handles the logout of a user
@@ -203,8 +204,8 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Author, CompanyCode, err := authenticate(r) // check if the user is authenticated
-	if err != nil {                             // if not return 401
+	Author, CompanyCode, _, err := authenticate(r) // check if the user is authenticated
+	if err != nil {                                // if not return 401
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
