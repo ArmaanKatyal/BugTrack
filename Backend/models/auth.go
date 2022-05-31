@@ -26,6 +26,7 @@ type Auth struct {
 type Claims struct {
 	Username    string `json:"username"`
 	CompanyCode string `json:"company_code"`
+	Role        string `json:"role"`
 	jwt.RegisteredClaims
 }
 
