@@ -21,7 +21,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -143,7 +143,7 @@ func Ticket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -193,7 +193,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -202,7 +202,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	// Create a new project
-	var ticket models.CreateTicket
+	var ticket models.CreateTicket2
 	// Decode the request body into the new project
 	err = decoder.Decode(&ticket)
 	if err != nil {
@@ -210,12 +210,26 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var createTicket models.CreateTicket
+	createTicket.Title = ticket.Title
+	createTicket.Description = ticket.Description
+	createTicket.Status = "open"
+	createTicket.Priority = ticket.Priority
+	createTicket.Tags = ticket.Tags
+	createTicket.CreatedBy = Author
+	createTicket.AssignedTo = ticket.AssignedTo
+	createTicket.CreatedOn = primitive.NewDateTimeFromTime(time.Now())
+	createTicket.UpdatedOn = primitive.NewDateTimeFromTime(time.Now())
+	createTicket.ProjectId = ticket.ProjectId
+	createTicket.ProjectName = ticket.ProjectName
+	createTicket.CompanyCode = CompanyCode
+
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// Insert the project
-	result, err := coll.InsertOne(context.TODO(), ticket)
+	result, err := coll.InsertOne(context.TODO(), createTicket)
 
 	if err != nil {
 		// if there is an error
@@ -234,7 +248,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{                                                               // create a new log
+	log := models.Log{ // create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -287,7 +301,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -357,7 +371,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{                                                               // create a new log
+	log := models.Log{ // create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -404,7 +418,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -456,7 +470,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{                                                               // create a new log
+	log := models.Log{ // create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -517,7 +531,7 @@ func ProjectTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -573,7 +587,7 @@ func FilterTicketsByStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -639,7 +653,7 @@ func FilterTicketsByPriority(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return

@@ -18,7 +18,7 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is logged in
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	// if the user is not logged in, return 401
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)

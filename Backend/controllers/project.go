@@ -21,7 +21,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -70,7 +70,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else if user.Role == "project-manager" {
-		filter := bson.D{{"created_by", Author}, {"company_code", CompanyCode}}
+		filter := bson.D{{"project_manager", Author}, {"company_code", CompanyCode}}
 		cursor, err := coll.Find(context.TODO(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -132,7 +132,7 @@ func Project(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -181,7 +181,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -294,7 +294,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -425,7 +425,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
