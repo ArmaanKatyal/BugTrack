@@ -1,13 +1,31 @@
 import React from "react";
 import axios from "axios";
 import Sidebar from "../Sidebar";
-import ProjectCard from "../ProjectCard";
+import ProjectCard from "../projectComponents/ProjectCard";
 
 const apiPath = "http://localhost:8080/api/v1";
 
 function Dashboard() {
     const [data, setData] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
+    const [userRole, setUserRole] = React.useState("");
+
+    const getUserRole = async () => {
+        try {
+            var config = {
+                headers: {
+                    "Content-Type": "application/json",
+                    token: document.cookie.split("=")[1],
+                },
+            };
+            await axios.get(apiPath + "/user/role", config).then((res) => {
+                setUserRole(res.data.role);
+            });
+        } catch (err) {
+            // do nothing
+        }
+    };
+    
 
     const toggleLoading = () => {
         setLoading(!loading);
@@ -31,6 +49,7 @@ function Dashboard() {
 
     React.useEffect(() => {
         if (document.cookie.split("=")[1]) {
+            getUserRole();
             dashboard();
         } else {
             window.location.href = "/";
@@ -38,7 +57,7 @@ function Dashboard() {
     }, []);
     return (
         <>
-            <Sidebar />
+            <Sidebar role={userRole} />
             <div className="flex flex-col bg-blue-500 pl-60 h-72 shadow-xl">
             {loading && (
                         <div class="ml-5 mt-5">
@@ -52,9 +71,9 @@ function Dashboard() {
                     )}
                 <div className="relative flex flex-col items-center">
                     <div className="flex flex-col h-full mt-12 pl-36 self-start">
-                        <h1 className="text-3xl font-sans-new text-white">Dashboard</h1>
+                        <h1 className="text-4xl font-sans-new text-white">Dashboard</h1>
                     </div>
-                    <ProjectCard dashData={data} />
+                    <ProjectCard dashData={data} role={userRole} />
                 </div>
             </div>
         </>
