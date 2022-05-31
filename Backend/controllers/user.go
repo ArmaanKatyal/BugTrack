@@ -22,7 +22,7 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	_, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -38,57 +38,76 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
+	//if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
 	var users []models.User           // Create a new slice of users
 	role := r.URL.Query().Get("role") // Get the role from the request
 
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	if role == "developer" || role == "project-manager" || role == "submitter" || role == "admin" {
-		filter := bson.D{{"role", role}, {"company_code", CompanyCode}} // Filter to get the users with the role provided
-		cursor, err := coll.Find(context.TODO(), filter)                // Get the cursor
-		if err != nil {                                                 // If there is an error
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// Iterate through the cursor
-		if err = cursor.All(context.TODO(), &users); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// Close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else if role == "" { // If the role is empty then get all the users
-		// Get the cursor
-		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// Iterate through the cursor
-		if err = cursor.All(context.TODO(), &users); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// Close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		popIndex := 0
-		for index, user := range users {
-			if user.Role == "admin" {
-				popIndex = index
+	if AuthorRole == "project-manager" {
+		if role == "developer" {
+			filter := bson.D{{"role", role}, {"company_code", CompanyCode}} // Filter to get the users with the role provided
+			cursor, err := coll.Find(context.TODO(), filter)                // Get the cursor
+			if err != nil {                                                 // If there is an error
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Iterate through the cursor
+			if err = cursor.All(context.TODO(), &users); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Close the cursor
+			if err := cursor.Close(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
-		users = append(users[:popIndex], users[popIndex+1:]...)
-
+	} else if AuthorRole == "admin" { // If the role is empty then get all the users
+		if role == "" {
+			// Get the cursor
+			cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Iterate through the cursor
+			if err = cursor.All(context.TODO(), &users); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Close the cursor
+			if err := cursor.Close(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			popIndex := 0
+			for index, user := range users {
+				if user.Role == "admin" {
+					popIndex = index
+				}
+			}
+			users = append(users[:popIndex], users[popIndex+1:]...)
+		} else if role == "developer" || role == "project-manager" || role == "submitter" {
+			filter := bson.D{{"role", role}, {"company_code", CompanyCode}} // Filter to get the users with the role provided
+			cursor, err := coll.Find(context.TODO(), filter)                // Get the cursor
+			if err != nil {                                                 // If there is an error
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Iterate through the cursor
+			if err = cursor.All(context.TODO(), &users); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// Close the cursor
+			if err := cursor.Close(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
 	} else { // If the role is not valid
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -112,7 +131,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -165,7 +184,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -196,7 +215,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	InsertUser := models.CreateUser{ // Create a new user
+	InsertUser := models.CreateUser{                                               // Create a new user
 		FirstName:   userDatafromAdmin.FirstName,
 		LastName:    userDatafromAdmin.LastName,
 		Username:    userDatafromAdmin.Username,
@@ -233,7 +252,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "User Created",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -286,7 +305,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -363,7 +382,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -410,7 +429,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -469,7 +488,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -511,7 +530,7 @@ func CheckUsernameExists(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	_, CompanyCode, err := authenticate(r)
+	_, CompanyCode, _, err := authenticate(r)
 	if err != nil { // If there is an error
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -578,7 +597,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, err := authenticate(r)
+	Author, CompanyCode, _, err := authenticate(r)
 	if err != nil { // If not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -729,7 +748,7 @@ func Lock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Author, CompanyCode, err := authenticate(r) // Authenticate the user
+	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -786,7 +805,7 @@ func UnLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Author, CompanyCode, err := authenticate(r) // Authenticate the user
+	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -843,7 +862,7 @@ func GetUserRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Author, CompanyCode, err := authenticate(r) // Authenticate the user
+	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
