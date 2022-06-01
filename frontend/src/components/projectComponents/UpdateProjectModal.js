@@ -1,7 +1,9 @@
 import React from "react";
 import Multiselect from "multiselect-react-dropdown";
 import axios from "axios";
+import { useCookies } from "react-cookie";
 const apiPath = "http://localhost:8080/api/v1";
+
 function UpdateProjectModal(props) {
     const [id, setId] = React.useState(props.projectId);
     const [title, setTitle] = React.useState(props.item.title);
@@ -15,6 +17,7 @@ function UpdateProjectModal(props) {
     );
     const [objects, setObjects] = React.useState([]);
     const [selected, setSelectedObjects] = React.useState([]);
+    const [cookie, setCookie] = useCookies(["token"]);
 
     const updateProject = async () => {
         var data = {
@@ -30,7 +33,7 @@ function UpdateProjectModal(props) {
         var config = {
             headers: {
                 "Content-Type": "application/json",
-                token: document.cookie.split("=")[1],
+                token: cookie.token,
             },
         };
             await axios

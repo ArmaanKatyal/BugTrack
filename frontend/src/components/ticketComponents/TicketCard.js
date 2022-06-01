@@ -2,6 +2,7 @@ import React from "react";
 import TicketItem from "./TicketItem";
 import axios from "axios";
 import Multiselect from "multiselect-react-dropdown";
+import { useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
@@ -17,6 +18,7 @@ function TicketCard(props) {
     const [tags, setTags] = React.useState([]);
     const [projectData, setProjectData] = React.useState([]);
     const [objects, setObjects] = React.useState([]);
+    const [cookie, setCookie] = useCookies(["token"]);
 
     const fillTags = (value) => {
         // make an array of strings which are comma separated values
@@ -40,7 +42,7 @@ function TicketCard(props) {
         var config = {
             headers: {
                 "Content-Type": "application/json",
-                token: document.cookie.split("=")[1],
+                token: cookie.token,
             },
         };
         try {
@@ -61,7 +63,7 @@ function TicketCard(props) {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
             await axios.get(apiPath + "/project", config).then((res) => {
@@ -82,7 +84,7 @@ function TicketCard(props) {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
             await axios.get(apiPath + "/user/role", config).then((res) => {
@@ -98,7 +100,7 @@ function TicketCard(props) {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
 
@@ -136,7 +138,7 @@ function TicketCard(props) {
     };
 
     React.useEffect(() => {
-        if (document.cookie.split("=")[1]) {
+        if (cookie.token) {
             getUserRole();
             getUsers();
             getProjectData();
@@ -401,6 +403,8 @@ function TicketCard(props) {
                                                 ticketId={itemvar.id}
                                                 role={userRole}
                                                 users={userData}
+                                                projects={projectData}
+                                                objects={objects}
                                             />
                                         ))}
                                 </tbody>

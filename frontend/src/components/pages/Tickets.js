@@ -2,12 +2,14 @@ import React from "react";
 import Sidebar from "../Sidebar";
 import axios from "axios";
 import TicketCard from "../ticketComponents/TicketCard";
+import { useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
 function Tickets() {
     const [loading, setLoading] = React.useState(true);
     const [data, setData] = React.useState([]);
+    const [cookie, setCookie] = useCookies(["token"]);
 
     const toggleLoading = () => {
         setLoading(!loading);
@@ -18,7 +20,7 @@ function Tickets() {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
             await axios.get(apiPath + "/ticket", config).then((res) => {
@@ -31,7 +33,7 @@ function Tickets() {
     };
 
     React.useEffect(() => {
-        if (document.cookie.split("=")[1]) {
+        if (cookie.token) {
             getTickets();
         } else {
             window.location.href = "/";
@@ -40,7 +42,7 @@ function Tickets() {
     return (
         <>
             <Sidebar />
-            <div className="flex flex-col bg-blue-500 h-72 pl-60">
+            <div className="flex flex-col bg-purple-600 h-72 pl-60">
                 {loading && (
                     <div className="ml-5 mt-5">
                         <div

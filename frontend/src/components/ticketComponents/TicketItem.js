@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import TicketDeleteModal from "./TicketDeleteModal";
+import TicketUpdateModal from "./TicketUpdateModal";
 
 function TicketItem(props) {
     return (
@@ -50,7 +51,7 @@ function TicketItem(props) {
             </td>
             <td className="text-sm text-gray-900 font-light px-6 py-4 whitespace-wrap">
                 {props.item.status === "resolved" ? (
-                    <span className="text-green-600">{props.item.status}</span>
+                    <span className="text-green-700 font-semibold">{props.item.status}</span>
                 ) : (<span>{props.item.status}</span>)}
             </td>
             <td className="text-sm text-gray-900 font-light px-6 py-4 whitespace-nowrap">
@@ -95,11 +96,14 @@ function TicketItem(props) {
                     )}
                 </ul>
             </td>
-            {/* <UpdateProjectModal
-                projectId={props.projectId}
+            <TicketUpdateModal
+                ticketId={props.ticketId}
                 item={props.item}
                 users={props.users}
-            /> */}
+                role={props.role}
+                projects={props.projects}
+                objects={props.objects}
+            />
             <TicketDeleteModal ticketId={props.ticketId} item={props.item} />
         </tr>
     );

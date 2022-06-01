@@ -1,6 +1,7 @@
 import React from "react";
 import axios from "axios";
 import ProjectItem from "./ProjectItem";
+import { useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
@@ -8,13 +9,14 @@ function ProjectCard(props) {
     const [title, setTitle] = React.useState("");
     const [description, setDescription] = React.useState("");
     const [userData, setUserData] = React.useState([]);
+    const [cookie, setCookie] = useCookies(["token", "role"]);
 
     const handleSubmit = async () => {
         try {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
             var data = {
@@ -46,28 +48,12 @@ function ProjectCard(props) {
         setDescription("");
     };
 
-    // const getprops.role = async () => {
-    //     try {
-    //         var config = {
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 token: document.cookie.split("=")[1],
-    //             },
-    //         };
-    //         await axios.get(apiPath + "/user/role", config).then((res) => {
-    //             setprops.role(res.data.role);
-    //         });
-    //     } catch (err) {
-    //         // do nothing
-    //     }
-    // };
-
     const getUsers = async () => {
         try {
             var config = {
                 headers: {
                     "Content-Type": "application/json",
-                    token: document.cookie.split("=")[1],
+                    token: cookie.token,
                 },
             };
 
@@ -80,7 +66,7 @@ function ProjectCard(props) {
     };
 
     React.useEffect(() => {
-        if (document.cookie.split("=")[1]) {
+        if (cookie.token) {
             // getprops.role();
             getUsers();
         }

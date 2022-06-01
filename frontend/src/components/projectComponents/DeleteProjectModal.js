@@ -1,13 +1,16 @@
 import React from "react";
 import axios from "axios";
+import {useCookies} from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
+
 
 function DeleteProjectModal(props) {
     const [id, setId] = React.useState(props.projectId);
     const [title, setTitle] = React.useState(props.item.title);
     const [userInput, setUserInput] = React.useState("");
     const [alertModal, setAlertModal] = React.useState(false);
+    const [cookie, setCookie] = useCookies(["token"]);
 
     const toggleAlertModal = () => {
         setAlertModal(!alertModal);
@@ -19,7 +22,7 @@ function DeleteProjectModal(props) {
                 var config = {
                     headers: {
                         "Content-Type": "application/json",
-                        token: document.cookie.split("=")[1],
+                        token: cookie.token,
                     },
                 };
                 await axios
