@@ -3,6 +3,7 @@ import { MdLockOutline } from "react-icons/md";
 import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
@@ -12,13 +13,14 @@ function Login() {
     const [companyCode, setCompanyCode] = useState("");
     const [buttonDisabled, setButtonDisabled] = useState(false);
     const [show, setShow] = useState(false);
+    const [cookies, setCookies] = useCookies(["token", "role"]);
 
     const alert = () => {
         setShow(true);
     };
 
-    const disableButton = () => {
-        setButtonDisabled(true);
+    const toggleButton = () => {
+        setButtonDisabled(!buttonDisabled);
     };
 
     const login = async () => {
@@ -26,7 +28,7 @@ function Login() {
             return;
         }
 
-        setButtonDisabled(true);
+        // toggleButton();
         try {
             await axios
                 .post(`${apiPath}/auth/login`, {
@@ -36,13 +38,18 @@ function Login() {
                 })
                 .then((res) => {
                     if (res.status === 200) {
-                        document.cookie = `token=${res.data.token}`;
+                        // document.cookie = `token=${res.data.token}`;
+                        // document.cookie = `role=${res.data.role}`;
+                        setCookies("token", res.data.token, { path: "/"});
+                        setCookies("role", res.data.role, { path: "/"});
                         window.location.href = "/dashboard";
+                        // toggleButton();
                     } else {
                         alert();
                         setUsername("");
                         setPassword("");
                         setCompanyCode("");
+                        // toggleButton();
                     }
                 });
         } catch (err) {
@@ -50,6 +57,7 @@ function Login() {
             setUsername("");
             setPassword("");
             setCompanyCode("");
+            // toggleButton();
         }
     };
 
@@ -143,6 +151,7 @@ function Login() {
                                 <button
                                     className="border-2 border-blue-600 text-blue-600 rounded-full px-12 py-2 inline-block font-semibold hover:bg-blue-600 hover:text-white hover: transition"
                                     onClick={login}
+                                    type="submit"
                                     disabled={buttonDisabled}
                                 >
                                     Sign in

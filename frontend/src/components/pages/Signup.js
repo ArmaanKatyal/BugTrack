@@ -3,6 +3,7 @@ import {useState} from "react";
 import { FaUser, FaBuilding, FaEnvelope } from "react-icons/fa";
 import { MdLockOutline } from "react-icons/md";
 import axios from "axios";
+import { useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
@@ -16,6 +17,7 @@ function Signup() {
     const [companyName, setCompanyName] = useState("");
     const [companyCode, setCompanyCode] = useState("");
     const [buttonDisabled, setButtonDisabled] = useState(false);
+    const [cookie, setCookie] = useCookies(["token"]);
 
     const disableButton = () => {
         setButtonDisabled(true);
@@ -72,8 +74,8 @@ function Signup() {
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center py-10">
           <div className="bg-white rounded-2xl shadow-2xl flex items-center flex-col max-w-4xl w-2/3">
             <div className="py-10">
-                <h2 className="text-3xl font-bold text-green-600 mb-2">Let's get started</h2>
-                <div className="border-2 w-10 border-green-600 inline-block mb-2"></div>
+                <h2 className="text-3xl font-bold text-blue-600 mb-2">Let's get started</h2>
+                <div className="border-2 w-10 border-blue-600 inline-block mb-2"></div>
             </div>
             <div className="flex flex-col items-center my-5">
                 <div className="bg-gray-100 w-96 p-2 flex items-center mb-2 hover:shadow-xl hover:transition">
@@ -165,7 +167,7 @@ function Signup() {
                     ></input>
                 </div>
             <button
-                  className="border-2 m-10 border-green-600 text-green-600 rounded-full px-12 py-2 inline-block font-semibold hover:bg-green-600 hover:text-white hover: transition"
+                  className="border-2 m-10 border-blue-600 text-blue-600 rounded-full px-12 py-2 inline-block font-semibold hover:bg-blue-600 hover:text-white hover: transition"
                   onClick={signup}
                   disabled={buttonDisabled}
                 >
