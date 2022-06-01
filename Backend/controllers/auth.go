@@ -111,9 +111,11 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	output := struct {
 		Message string `json:"message"`
 		Token   string `json:"token"`
+		Role    string `json:"role"`
 	}{
 		Message: "success",
 		Token:   tokenString,
+		Role:    user2.Role,
 	}
 	err = json.NewEncoder(w).Encode(output)
 	if err != nil {
