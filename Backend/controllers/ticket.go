@@ -318,7 +318,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	// Create a new project
-	var ticket models.CreateTicket
+	var ticket models.CreateTicket3
 	// Decode the request body into the new project
 	err = decoder.Decode(&ticket)
 	if err != nil {
@@ -326,13 +326,26 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var updateTicket models.CreateTicket
+	updateTicket.Title = ticket.Title
+	updateTicket.Description = ticket.Description
+	updateTicket.Status = ticket.Status
+	updateTicket.Priority = ticket.Priority
+	updateTicket.Tags = ticket.Tags
+	updateTicket.AssignedTo = ticket.AssignedTo
+	updateTicket.UpdatedOn = primitive.NewDateTimeFromTime(time.Now())
+	updateTicket.CompanyCode = CompanyCode
+	updateTicket.CreatedBy = Author
+	updateTicket.ProjectName = ticket.ProjectName
+	updateTicket.ProjectId = ticket.ProjectId
+
 	// Get the client connection
 	client := config.ClientConnection()
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 	// filter to update the project with the id provided
-	filter := bson.D{{"_id", ticketID}, {"company_code", CompanyCode}}
-	update := bson.D{{"$set", ticket}}
+	filter := bson.D{{"_id", ticketID}}
+	update := bson.D{{"$set", updateTicket}}
 	// Update the project
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
 
