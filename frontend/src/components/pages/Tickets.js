@@ -43,19 +43,19 @@ function Tickets() {
         <>
             <Sidebar />
             <div className="flex flex-col bg-purple-600 h-72 pl-60">
-                {loading && (
-                    <div className="ml-5 mt-5">
-                        <div
-                            className="spinner-border animate-spin text-white inline-block w-10 h-10 border-3 rounded-full self-start"
-                            role="status"
-                        >
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                )}
                 <div className="relative flex flex-col items-center">
-                    <div className="flex flex-col h-full mt-12 ml-36 self-start">
+                    <div className="flex flex-row h-full mt-12 ml-36 self-start gap-10">
                         <h1 className="text-4xl text-white font-sans-new">Tickets</h1>
+                        {loading && (
+                            <div className="">
+                                <div
+                                    className="spinner-border animate-spin text-white inline-block w-10 h-10 border-3 rounded-full self-start"
+                                    role="status"
+                                >
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <TicketCard data={data} />
                 </div>
