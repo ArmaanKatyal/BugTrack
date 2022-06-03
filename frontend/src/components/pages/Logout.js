@@ -1,9 +1,12 @@
 import React from "react";
+import { useCookies } from "react-cookie";
 
 function Logout() {
+  const [cookie, setCookie, removeCookie] = useCookies(["token", "role"]);
   React.useEffect(() => {
     if (document.cookie.split("=")[1]) {
-        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        removeCookie("token");
+        removeCookie("role");
         window.location.href = "/";
     } else {
       window.location.href = "/";
