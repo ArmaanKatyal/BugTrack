@@ -10,7 +10,7 @@ function Sidebar(props) {
     return (
         <div className="w-60 h-full shadow-2xl bg-white px-1 absolute font-sans-new">
             <div className="mt-10 flex flex-col items-center justify-center">
-                <FaBug className="mb-3 text-5xl text-green-900 hover:animate-spin" />
+                <FaBug className="mb-3 text-5xl text-green-900 hover:animate-pulse" />
                 <p className="text-2xl font-semibold">
                     Bug
                     <span className="text-2xl font-semibold text-green-600">Track</span>
