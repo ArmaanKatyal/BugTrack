@@ -13,32 +13,44 @@ function SystemLogs() {
         setLoading(!loading);
     };
 
-    React.useEffect(() => {
-        if (cookie.token) {
-            try {
-              axios.get("http://localhost:8080/api/v1/logs", {
-                headers: {
-                  "Content-Type": "application/json",
-                  token: cookie.token,
-                },
-              }).then((res) => {
-                toggleLoading();
-                setData(res.data);
-              }
-              );
-            } catch (err) {
-              window.location.href = "/";
-            }
-        } else {
+    const getLogs = async () => {
+      if (cookie.token) {
+        try {
+            await axios
+                .get("http://localhost:8080/api/v1/logs", {
+                    headers: {
+                        "Content-Type": "application/json",
+                        token: cookie.token,
+                    },
+                })
+                .then((res) => {
+                    if (res.status === 200) {
+                        toggleLoading();
+                        setData(res.data);
+                    } else {
+                        window.location.href = "/";
+                    }
+                });
+        } catch (err) {
             window.location.href = "/";
         }
+    } else {
+        window.location.href = "/";
+    }
+    };
+
+    React.useEffect(() => {
+        getLogs();
     }, []);
     return (
         <>
             <Sidebar />
             <div className="flex flex-col bg-purple-600 h-72 pl-60">
-                {loading && (
-                    <div className="ml-5 mt-5">
+                <div className="relative flex flex-col items-center">
+                    <div className="flex flex-row h-full mt-12 ml-36 self-start gap-10">
+                        <h1 className="text-4xl text-white font-sans-new">System Logs</h1>
+                        {loading && (
+                    <div className="">
                         <div
                             className="spinner-border animate-spin text-white inline-block w-10 h-10 border-3 rounded-full self-start"
                             role="status"
@@ -47,11 +59,8 @@ function SystemLogs() {
                         </div>
                     </div>
                 )}
-                <div className="relative flex flex-col items-center">
-                    <div className="flex flex-col h-full mt-12 ml-36 self-start">
-                        <h1 className="text-4xl text-white font-sans-new">System Logs</h1>
                     </div>
-                    <LogCard data={data}/>
+                    <LogCard data={data} />
                 </div>
             </div>
         </>
