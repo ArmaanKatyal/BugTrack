@@ -61,8 +61,11 @@ function Dashboard() {
         <>
             <Sidebar />
             <div className="flex flex-col bg-blue-500 pl-60 h-72 shadow-xl">
-            {loading && (
-                        <div class="ml-5 mt-5">
+                <div className="relative flex flex-col items-center">
+                    <div className="flex flex-row h-full mt-12 pl-36 self-start gap-10">
+                        <h1 className="text-4xl font-sans-new text-white">Dashboard</h1>
+                        {loading && (
+                        <div class="">
                             <div
                                 class="spinner-border animate-spin text-white inline-block w-10 h-10 border-3 rounded-full self-start"
                                 role="status"
@@ -71,9 +74,6 @@ function Dashboard() {
                             </div>
                         </div>
                     )}
-                <div className="relative flex flex-col items-center">
-                    <div className="flex flex-col h-full mt-12 pl-36 self-start">
-                        <h1 className="text-4xl font-sans-new text-white">Dashboard</h1>
                     </div>
                     <ProjectCard dashData={data} role={userRole} />
                 </div>
