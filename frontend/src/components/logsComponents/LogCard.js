@@ -4,7 +4,7 @@ import LogItem from './LogItem'
 function LogCard(props) {
   return (
     <div className="absolute w-11/12 flex flex-col bg-white h-auto top-40 rounded-lg shadow-xl font-sans-new">
-        <div className="flex flex-col pb-3">
+        <div className="flex flex-col">
                 <div className="overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="py-0 inline-block min-w-full sm:px-6 lg:px-8">
                         <div className="overflow-hidden rounded-tl-lg rounded-tr-lg shadow-lg">
