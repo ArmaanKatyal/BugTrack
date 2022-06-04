@@ -1,10 +1,13 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { BsThreeDotsVertical } from 'react-icons/bs'
+import React from "react";
+import { Link } from "react-router-dom";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import UserDeleteModal from "./UserDeleteModal";
+import { CgLock, CgLockUnlock } from "react-icons/cg";
 
 function UserItem(props) {
-  return (
-    <tr className="border-b hover:shadow-sm">
+    return (
+        // <tr className="border-b hover:shadow-sm hover:bg-gray-100">
+        <tr className={props.item.locked === true ? ("border-b hover:shadow-sm bg-red-100") : ("border-b hover:shadow-sm hover:bg-gray-100")}>
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 <Link to={`/profile/${props.item.username}`} className="text-purple-600">
                     <span>{`${props.item.first_name} ${props.item.last_name}`}</span>
@@ -53,9 +56,41 @@ function UserItem(props) {
                             <button
                                 className=" dropdown-item text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700 hover:bg-gray-100"
                                 data-bs-toggle="modal"
-                                data-bs-target={"#deletestaticBackdrop" + props.projectId}
+                                data-bs-target={
+                                    "#deletestaticBackdrop" + props.item.username
+                                }
                             >
                                 Delete
+                            </button>
+                        </li>
+                    )}
+                    {props.role === "admin" && props.item.locked === false && (
+                        <li>
+                            <button
+                                className=" dropdown-item text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700 hover:bg-gray-100"
+                                data-bs-toggle="modal"
+                                data-bs-target={
+                                    "#lockstaticBackdrop" + props.item.username
+                                }
+                            >
+                                <div className="flex flex-row gap-1 justify-center items-center">
+                                    <CgLock /> Lock
+                                </div>
+                            </button>
+                        </li>
+                    )}
+                    {props.role === "admin" && props.item.locked === true && (
+                        <li>
+                            <button
+                                className=" dropdown-item text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700 hover:bg-gray-100"
+                                data-bs-toggle="modal"
+                                data-bs-target={
+                                    "#unlockstaticBackdrop" + props.item.username
+                                }
+                            >
+                                <div className="flex flex-row gap-1 justify-center items-center">
+                                  <CgLockUnlock /> Unlock
+                                </div>
                             </button>
                         </li>
                     )}
@@ -68,8 +103,9 @@ function UserItem(props) {
                 role={props.role}
             /> */}
             {/* <DeleteProjectModal projectId={props.projectId} item={props.item} /> */}
+            <UserDeleteModal item={props.item} />
         </tr>
-  )
+    );
 }
 
-export default UserItem
+export default UserItem;
