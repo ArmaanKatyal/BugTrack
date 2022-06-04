@@ -57,7 +57,7 @@ function ProjectCard(props) {
                 },
             };
 
-            await axios.get(`${apiPath}/user?role=`, config).then((res) => {
+            await axios.get(`${apiPath}/user?role=developer`, config).then((res) => {
                 setUserData(res.data);
             });
         } catch (err) {
