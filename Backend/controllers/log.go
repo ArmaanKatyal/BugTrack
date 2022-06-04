@@ -56,10 +56,15 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}()
-	// reverse the slice to get the latest logs first
+	//reverse the slice to get the latest first 10 queries
 	reverseLogs := make([]models.Log, len(logs))
 	for i, log := range logs {
 		reverseLogs[len(logs)-i-1] = log
+	}
+
+	// only get the latest 10 queries
+	if len(reverseLogs) > 10 {
+		reverseLogs = reverseLogs[:10]
 	}
 
 	// set the content type to json
