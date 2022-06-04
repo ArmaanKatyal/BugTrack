@@ -39,6 +39,16 @@ type UserDatafromAdmin struct {
 	Locked      bool               `json:"locked" bson:"locked"`
 }
 
+type UserDatafromAdmin2 struct {
+	FirstName string `json:"first_name" bson:"first_name"`
+	LastName  string `json:"last_name" bson:"last_name"`
+	Username  string `json:"username" bson:"username"`
+	Password  string `json:"password" bson:"password"`
+	Email     string `json:"email" bson:"email"`
+	Role      string `json:"role" bson:"role"`
+	Locked    bool   `json:"locked" bson:"locked"`
+}
+
 // Profile struct holds the user profile data that is stored in the database
 type Profile struct {
 	FirstName       string   `json:"first_name" bson:"first_name"`
