@@ -3,6 +3,7 @@ package controllers
 import (
 	"Backend/config"
 	"Backend/models"
+	"container/list"
 	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated and logged in
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	// if not, return unauthorized
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -50,7 +51,7 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 	// Create a slice of tickets
 	var tickets []models.Ticket
 
-	if user.Role == "admin" { // if the user is an admin, get all the tickets
+	if AuthorRole == "admin" { // if the user is an admin, get all the tickets
 		// Get the collection
 		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
 		// Get the cursor
@@ -69,9 +70,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else if user.Role == "developer" { // if the user is a developer, get all the tickets assigned to him
+	} else if AuthorRole == "developer" { // if the user is a developer, get all the tickets assigned to him
 		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", user.Username}, {"company_code", CompanyCode}})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"assigned_to", Author}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -84,9 +85,9 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else if user.Role == "submitter" { // if the user is a submitter, get all the tickets submitted by him
+	} else if AuthorRole == "submitter" { // if the user is a submitter, get all the tickets submitted by him
 		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", user.Username}, {"company_code", CompanyCode}})
+		cursor, err := coll.Find(context.TODO(), bson.D{{"created_by", Author}, {"company_code", CompanyCode}})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -99,28 +100,70 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else if user.Role == "project-manager" { // if the user is a project manager, get all the tickets assigned to the project he is in
+	} else if AuthorRole == "project-manager" { // if the user is a project manager, get all the tickets assigned to the project he is in
+		//projectColl := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
+		//filter := bson.D{{"project_manager", Author}, {"company_code", CompanyCode}}
+		//var project models.Project
+		//err = projectColl.FindOne(context.TODO(), filter).Decode(&project)
+		//if err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
+		//coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
+		//cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}, {"company_code", CompanyCode}})
+		//if err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
+		//if err = cursor.All(context.TODO(), &tickets); err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
+		//if err := cursor.Close(context.TODO()); err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
 		projectColl := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
-		filter := bson.D{{"created_by", Author}, {"company_code", CompanyCode}}
-		var project models.Project
-		err = projectColl.FindOne(context.TODO(), filter).Decode(&project)
+		filter := bson.D{{"project_manager", Author}, {"company_code", CompanyCode}}
+		var projects []models.Project
+		cursor, err := projectColl.Find(context.TODO(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
-		cursor, err := coll.Find(context.TODO(), bson.D{{"project_id", project.Id}, {"company_code", CompanyCode}})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if err = cursor.All(context.TODO(), &tickets); err != nil {
+		if err = cursor.All(context.TODO(), &projects); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if err := cursor.Close(context.TODO()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
+		}
+
+		ticketColl := client.Database(config.ViperEnvVariable("dbName")).Collection("tickets")
+		ticketList := list.New()
+		for _, project := range projects {
+			cursor, err := ticketColl.Find(context.TODO(), bson.D{{"project_id", project.Id}, {"company_code", CompanyCode}})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			for cursor.Next(context.TODO()) {
+				var ticket models.Ticket
+				err = cursor.Decode(&ticket)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				ticketList.PushBack(ticket)
+			}
+			if err := cursor.Close(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		for e := ticketList.Front(); e != nil; e = e.Next() {
+			tickets = append(tickets, e.Value.(models.Ticket))
 		}
 	}
 
