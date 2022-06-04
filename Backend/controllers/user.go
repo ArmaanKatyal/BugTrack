@@ -192,7 +192,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body) // Create a new decoder
 	// Create a new user
-	var userDatafromAdmin models.UserDatafromAdmin
+	var userDatafromAdmin models.UserDatafromAdmin2
 	// Decode the request body into the new user
 	err = decoder.Decode(&userDatafromAdmin)
 	if err != nil {
@@ -215,13 +215,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	InsertUser := models.CreateUser{                                               // Create a new user
+	InsertUser := models.CreateUser{ // Create a new user
 		FirstName:   userDatafromAdmin.FirstName,
 		LastName:    userDatafromAdmin.LastName,
 		Username:    userDatafromAdmin.Username,
 		Email:       userDatafromAdmin.Email,
 		Role:        userDatafromAdmin.Role,
-		CreatedOn:   userDatafromAdmin.CreatedOn,
+		CreatedOn:   primitive.NewDateTimeFromTime(time.Now()),
 		CompanyCode: CompanyCode,
 		Locked:      userDatafromAdmin.Locked,
 	}
@@ -252,7 +252,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "User Created",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -382,7 +382,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -488,7 +488,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{                                                               // Create a new log
+	log := models.Log{ // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -894,6 +894,58 @@ func GetUserRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.NewEncoder(w).Encode(output)
+	if err != nil {
+		return
+	}
+}
+
+func LockedUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if !verifyAdmin(Author, CompanyCode, config.ClientConnection()) { // If the user is not an admin
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	client := config.ClientConnection() // Get the client connection
+	defer func() {
+		// Disconnect the client
+		if err := client.Disconnect(context.TODO()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
+
+	var users []models.User
+	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	filter := bson.D{{"company_code", CompanyCode}, {"locked", true}}              // Filter to get the users with the company code provided and locked set to true
+	cur, err := coll.Find(context.TODO(), filter)                                  // Get the users with the company code provided and locked set to true
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err = cur.All(context.TODO(), &users); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err = cur.Close(context.TODO()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
 		return
 	}
