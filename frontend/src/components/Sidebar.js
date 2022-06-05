@@ -55,7 +55,7 @@ function Sidebar(props) {
                         </Link>
                     </li>
                 )}
-                {cookies.role === "admin" && (
+                {(cookies.role === "admin" || cookies.role === "project-manager") && (
                     <li className="relative">
                     <Link
                         to="/system-logs"
