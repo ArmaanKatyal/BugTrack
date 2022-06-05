@@ -310,7 +310,7 @@ function UserCard(props) {
                                         className="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
                                         data-bs-dismiss="modal"
                                         aria-label="Close"
-                                        onClick={clearFieldsOnClose}
+                                        // onClick={clearFieldsOnClose}
                                     ></button>
                                 </div>
                                 <div className="modal-body relative p-4">
@@ -336,17 +336,20 @@ function UserCard(props) {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            
-                                                            {lockedData.map((user, key) => (
-                                                                <tr class="border-b">
-                                                                <td class="text-sm text-gray-900 font-light px-6 py-4 whitespace-nowrap">
-                                                                    {user.username}
-                                                                </td>
-                                                                <td class="text-sm text-gray-900 font-light px-6 py-4 whitespace-nowrap">
-                                                                    {user.role}
-                                                                </td>
-                                                            </tr>
-                                                            ))}
+                                                            {lockedData.map(
+                                                                (user, key) => (
+                                                                    <tr class="border-b">
+                                                                        <td class="text-sm text-gray-900 font-light px-6 py-4 whitespace-nowrap">
+                                                                            {
+                                                                                user.username
+                                                                            }
+                                                                        </td>
+                                                                        <td class="text-sm text-gray-900 font-light px-6 py-4 whitespace-nowrap">
+                                                                            {user.role}
+                                                                        </td>
+                                                                    </tr>
+                                                                )
+                                                            )}
                                                         </tbody>
                                                     </table>
                                                 </div>
