@@ -131,7 +131,7 @@ func User(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	_, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -141,7 +141,11 @@ func User(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -184,7 +188,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -208,11 +212,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
 	InsertUser := models.CreateUser{                                               // Create a new user
@@ -305,7 +312,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil { // if not, return unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -322,7 +329,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body) // Create a new decoder
 	// Create a new user
-	var user models.CreateUser
+	var user models.UpdateUser
 	// Decode the request body into the new user
 	err = decoder.Decode(&user)
 	if err != nil {
@@ -333,7 +340,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -429,7 +440,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -447,7 +458,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	// Get the client connection
 	client := config.ClientConnection()
 
-	if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//if verifyAdmin(Author, CompanyCode, client) == false { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -865,12 +880,12 @@ func UnLock(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserRole(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
+	_, _, AuthorRole, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -884,21 +899,21 @@ func GetUserRole(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	var user models.User
-	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}          // Filter to get the user with the username provided
-	err = coll.FindOne(context.TODO(), filter).Decode(&user)                       // Get the user with the username provided
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+	//var user models.User
+	//coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
+	//filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}          // Filter to get the user with the username provided
+	//err = coll.FindOne(context.TODO(), filter).Decode(&user)                       // Get the user with the username provided
+	//if err != nil {
+	//	w.WriteHeader(http.StatusNotFound)
+	//	return
+	//}
 
 	w.Header().Set("Content-Type", "application/json") // Set the content type to JSON
 	w.WriteHeader(http.StatusOK)
 	output := struct {
 		Role string `json:"role"`
 	}{
-		Role: user.Role,
+		Role: AuthorRole,
 	}
 
 	err = json.NewEncoder(w).Encode(output)
@@ -908,18 +923,18 @@ func GetUserRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func LockedUsers(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
+	_, CompanyCode, AuthorRole, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	if !verifyAdmin(Author, CompanyCode, config.ClientConnection()) { // If the user is not an admin
+	if AuthorRole != "admin" { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
