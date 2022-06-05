@@ -18,61 +18,66 @@ func AllLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is logged in
-	_, CompanyCode, _, err := authenticate(r)
+	_, CompanyCode, AuthorRole, err := authenticate(r)
 	// if the user is not logged in, return 401
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	// create the client connection
-	client := config.ClientConnection()
-	// get the collection
-	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
-	// slice to store the logs
-	var logs []models.Log
-	// find all the logs
-	cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// iterate through the logs
-	if err = cursor.All(context.TODO(), &logs); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defer func() {
-		// close the cursor
-		if err := cursor.Close(context.TODO()); err != nil {
+	if AuthorRole == "admin" {
+		// create the client connection
+		client := config.ClientConnection()
+		// get the collection
+		coll := client.Database(config.ViperEnvVariable("dbName")).Collection("logs")
+		// slice to store the logs
+		var logs []models.Log
+		// find all the logs
+		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		// close the client connection
-		if err := client.Disconnect(context.TODO()); err != nil {
+
+		// iterate through the logs
+		if err = cursor.All(context.TODO(), &logs); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	}()
-	//reverse the slice to get the latest first 10 queries
-	reverseLogs := make([]models.Log, len(logs))
-	for i, log := range logs {
-		reverseLogs[len(logs)-i-1] = log
-	}
 
-	// only get the latest 10 queries
-	if len(reverseLogs) > 10 {
-		reverseLogs = reverseLogs[:10]
-	}
+		defer func() {
+			// close the cursor
+			if err := cursor.Close(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// close the client connection
+			if err := client.Disconnect(context.TODO()); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}()
+		//reverse the slice to get the latest first 10 queries
+		reverseLogs := make([]models.Log, len(logs))
+		for i, log := range logs {
+			reverseLogs[len(logs)-i-1] = log
+		}
 
-	// set the content type to json
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)                 // 200
-	err = json.NewEncoder(w).Encode(reverseLogs) // encode the logs
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		// only get the latest 10 queries
+		if len(reverseLogs) > 10 {
+			reverseLogs = reverseLogs[:10]
+		}
+
+		// set the content type to json
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)                 // 200
+		err = json.NewEncoder(w).Encode(reverseLogs) // encode the logs
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
