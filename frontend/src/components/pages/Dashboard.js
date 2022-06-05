@@ -9,24 +9,24 @@ const apiPath = "http://localhost:8080/api/v1";
 function Dashboard() {
     const [data, setData] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
-    const [userRole, setUserRole] = React.useState("");
+    // const [userRole, setUserRole] = React.useState("");
     const [cookie, setCookie] = useCookies(["token", "role"]);
 
-    const getUserRole = async () => {
-        try {
-            var config = {
-                headers: {
-                    "Content-Type": "application/json",
-                    token: cookie.token,
-                },
-            };
-            await axios.get(apiPath + "/user/role", config).then((res) => {
-                setUserRole(res.data.role);
-            });
-        } catch (err) {
-            // do nothing
-        }
-    };
+    // const getUserRole = async () => {
+    //     try {
+    //         var config = {
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 token: cookie.token,
+    //             },
+    //         };
+    //         await axios.get(apiPath + "/user/role", config).then((res) => {
+    //             setUserRole(res.data.role);
+    //         });
+    //     } catch (err) {
+    //         // do nothing
+    //     }
+    // };
     
 
     const toggleLoading = () => {
@@ -51,7 +51,7 @@ function Dashboard() {
 
     React.useEffect(() => {
         if (cookie.token) {
-            getUserRole();
+            // getUserRole();
             dashboard();
         } else {
             window.location.href = "/";
@@ -75,7 +75,7 @@ function Dashboard() {
                         </div>
                     )}
                     </div>
-                    <ProjectCard dashData={data} role={userRole} />
+                    <ProjectCard dashData={data} role={cookie.role} />
                 </div>
             </div>
         </>
