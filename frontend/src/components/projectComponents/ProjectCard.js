@@ -56,10 +56,15 @@ function ProjectCard(props) {
                     token: cookie.token,
                 },
             };
-
-            await axios.get(`${apiPath}/user?role=developer`, config).then((res) => {
-                setUserData(res.data);
-            });
+            if (cookie.role === "admin") {
+                await axios.get(`${apiPath}/user?role=`, config).then((res) => {
+                    setUserData(res.data);
+                });
+            } else if (cookie.role === "project-manager") {
+                await axios.get(`${apiPath}/user?role=developer`, config).then((res) => {
+                    setUserData(res.data);
+                });
+            }
         } catch (err) {
             // do nothing
         }
@@ -77,13 +82,13 @@ function ProjectCard(props) {
                 <div className="flex flex-col ml-4 p-2">
                     {/* <h2 className="text-xl font-sans-new">Projects</h2> */}
                     {props.role === "developer" && (
-                            <h2 className="text-xl font-sans-new">Assigned Projects</h2>
+                        <h2 className="text-xl font-sans-new">Assigned Projects</h2>
                     )}
                     {props.role === "admin" && (
-                            <h2 className="text-xl font-sans-new">All Projects</h2>
+                        <h2 className="text-xl font-sans-new">All Projects</h2>
                     )}
                     {props.role === "project-manager" && (
-                            <h2 className="text-xl font-sans-new">Projects</h2>
+                        <h2 className="text-xl font-sans-new">Projects</h2>
                     )}
                 </div>
                 <div className="flex flex-row mr-10 p-2">
