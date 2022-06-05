@@ -39,14 +39,14 @@ func AllTickets(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // get the users collection
-	filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}              // filter to get the user by id
-	var user models.User                                                               // create a new user
-	err = userColl.FindOne(context.TODO(), filter).Decode(&user)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	//userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // get the users collection
+	//filter := bson.D{{"username", Author}, {"company_code", CompanyCode}}              // filter to get the user by id
+	//var user models.User                                                               // create a new user
+	//err = userColl.FindOne(context.TODO(), filter).Decode(&user)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
 
 	// Create a slice of tickets
 	var tickets []models.Ticket
@@ -291,7 +291,7 @@ func CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                                               // create a new log
 		Type:        "Create",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -427,7 +427,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                                               // create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -526,7 +526,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // get the logs collection
-	log := models.Log{ // create a new log
+	log := models.Log{                                                               // create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
