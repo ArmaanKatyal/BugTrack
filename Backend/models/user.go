@@ -27,6 +27,13 @@ type CreateUser struct {
 	Locked      bool               `json:"locked" bson:"locked"`
 }
 
+type UpdateUser struct {
+	FirstName string `json:"first_name" bson:"first_name"`
+	LastName  string `json:"last_name" bson:"last_name"`
+	Email     string `json:"email" bson:"email"`
+	Role      string `json:"role" bson:"role"`
+}
+
 type UserDatafromAdmin struct {
 	FirstName   string             `json:"first_name" bson:"first_name"`
 	LastName    string             `json:"last_name" bson:"last_name"`
