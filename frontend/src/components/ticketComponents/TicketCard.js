@@ -2,12 +2,12 @@ import React from "react";
 import TicketItem from "./TicketItem";
 import axios from "axios";
 import Multiselect from "multiselect-react-dropdown";
-import { useCookies } from "react-cookie";
+import { Cookies, useCookies } from "react-cookie";
 
 const apiPath = "http://localhost:8080/api/v1";
 
 function TicketCard(props) {
-    const [userRole, setUserRole] = React.useState("");
+    // const [userRole, setUserRole] = React.useState("");
     const [userData, setUserData] = React.useState([]);
     const [title, setTitle] = React.useState("");
     const [description, setDescription] = React.useState("");
@@ -18,7 +18,7 @@ function TicketCard(props) {
     const [tags, setTags] = React.useState([]);
     const [projectData, setProjectData] = React.useState([]);
     const [objects, setObjects] = React.useState([]);
-    const [cookie, setCookie] = useCookies(["token"]);
+    const [cookie, setCookie] = useCookies(["token", "role"]);
 
     const fillTags = (value) => {
         // make an array of strings which are comma separated values
@@ -79,21 +79,20 @@ function TicketCard(props) {
         setProjectName(projectData.find((project) => project.id === id).title);
     };
 
-    const getUserRole = async () => {
-        try {
-            var config = {
-                headers: {
-                    "Content-Type": "application/json",
-                    token: cookie.token,
-                },
-            };
-            await axios.get(apiPath + "/user/role", config).then((res) => {
-                setUserRole(res.data.role);
-            });
-        } catch (err) {
-            // do nothing
-        }
-    };
+    // const getUserRole = async () => {
+    //     try {
+    //         var config = {
+    //             headers: {
+    //                 token: cookie.token,
+    //             },
+    //         };
+    //         await axios.post(apiPath + "/user/role", config).then((res) => {
+    //             setUserRole(res.data.role);
+    //         });
+    //     } catch (err) {
+    //         // do nothing
+    //     }
+    // };
 
     const getUsers = async () => {
         try {
@@ -139,7 +138,7 @@ function TicketCard(props) {
 
     React.useEffect(() => {
         if (cookie.token) {
-            getUserRole();
+            // getUserRole();
             getUsers();
             getProjectData();
         }
@@ -150,13 +149,13 @@ function TicketCard(props) {
             <div className="flex flex-row justify-between bg-white rounded-tr-lg rounded-tl-lg shadow-lg">
                 <div className="flex flex-col ml-4 p-2">
                     {/* <h2 className="text-xl font-sans-new hidden">Tickets</h2> */}
-                    {userRole === "developer" && (
+                    {cookie.role === "developer" && (
                         <h2 className="text-xl font-sans-new">Assigned Tickets</h2>
                     )}
-                    {userRole === "admin" && (
+                    {cookie.role === "admin" && (
                         <h2 className="text-xl font-sans-new">All Tickets</h2>
                     )}
-                    {userRole === "project-manager" && (
+                    {cookie.role === "project-manager" && (
                         <h2 className="text-xl font-sans-new">Project Tickets</h2>
                     )}
                 </div>
@@ -401,7 +400,7 @@ function TicketCard(props) {
                                                 key={key}
                                                 item={itemvar}
                                                 ticketId={itemvar.id}
-                                                role={userRole}
+                                                role={cookie.role}
                                                 users={userData}
                                                 projects={projectData}
                                                 objects={objects}
