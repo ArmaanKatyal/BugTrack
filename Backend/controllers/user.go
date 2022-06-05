@@ -215,7 +215,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
-	InsertUser := models.CreateUser{ // Create a new user
+	InsertUser := models.CreateUser{                                               // Create a new user
 		FirstName:   userDatafromAdmin.FirstName,
 		LastName:    userDatafromAdmin.LastName,
 		Username:    userDatafromAdmin.Username,
@@ -252,7 +252,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "User Created",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -382,7 +382,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Update",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -488,7 +488,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logColl := client.Database(config.ViperEnvVariable("dbName")).Collection("logs") // Get the logs collection
-	log := models.Log{ // Create a new log
+	log := models.Log{                                                               // Create a new log
 		Type:        "Delete",
 		Author:      Author,
 		Date:        primitive.NewDateTimeFromTime(time.Now()),
@@ -743,12 +743,12 @@ func verifyProjectManager(Author string, projectID primitive.ObjectID, client *m
 }
 
 func Lock(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != "GET" { // If the method is not POST
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
+	_, CompanyCode, AuthorRole, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -771,10 +771,14 @@ func Lock(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+	if AuthorRole != "admin" { // If the user is not an admin
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	//if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
 
 	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users") // Get the users collection
 	filter := bson.D{{"username", username}, {"company_code", CompanyCode}}            // Filter to get the user with the username provided
@@ -800,12 +804,12 @@ func Lock(w http.ResponseWriter, r *http.Request) {
 }
 
 func UnLock(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	Author, CompanyCode, _, err := authenticate(r) // Authenticate the user
+	_, CompanyCode, AuthorRole, err := authenticate(r) // Authenticate the user
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -828,7 +832,11 @@ func UnLock(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+	//if !verifyAdmin(Author, CompanyCode, client) { // If the user is not an admin
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
