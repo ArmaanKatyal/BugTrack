@@ -5,6 +5,7 @@ import UserDeleteModal from "./UserDeleteModal";
 import { CgLock, CgLockUnlock } from "react-icons/cg";
 import UserLockModal from "./UserLockModal";
 import UserUnLockModal from "./UserUnLockModal";
+import UserUpdateModal from "./UserUpdateModal";
 
 function UserItem(props) {
     return (
@@ -98,12 +99,7 @@ function UserItem(props) {
                     )}
                 </ul>
             </td>
-            {/* <UpdateProjectModal
-                projectId={props.projectId}
-                item={props.item}
-                users={props.users}
-                role={props.role}
-            /> */}
+            <UserUpdateModal item={props.item} />
             <UserLockModal item={props.item} />
             <UserUnLockModal item={props.item} />
             <UserDeleteModal item={props.item} />
