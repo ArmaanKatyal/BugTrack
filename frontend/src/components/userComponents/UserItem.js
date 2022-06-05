@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import UserDeleteModal from "./UserDeleteModal";
 import { CgLock, CgLockUnlock } from "react-icons/cg";
+import UserLockModal from "./UserLockModal";
+import UserUnLockModal from "./UserUnLockModal";
 
 function UserItem(props) {
     return (
@@ -43,7 +45,7 @@ function UserItem(props) {
                                     className=" dropdown-item text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700 hover:bg-gray-100"
                                     data-bs-toggle="modal"
                                     data-bs-target={
-                                        "#updatestaticBackdrop" + props.projectId
+                                        "#updatestaticBackdrop" + props.item.username
                                     }
                                 >
                                     Update
@@ -102,7 +104,8 @@ function UserItem(props) {
                 users={props.users}
                 role={props.role}
             /> */}
-            {/* <DeleteProjectModal projectId={props.projectId} item={props.item} /> */}
+            <UserLockModal item={props.item} />
+            <UserUnLockModal item={props.item} />
             <UserDeleteModal item={props.item} />
         </tr>
     );
