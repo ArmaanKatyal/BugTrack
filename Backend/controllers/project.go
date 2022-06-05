@@ -21,7 +21,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -40,17 +40,17 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
-	var user models.User
-	err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}, {"company_code", CompanyCode}}).Decode(&user)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	//userColl := client.Database(config.ViperEnvVariable("dbName")).Collection("users")
+	//var user models.User
+	//err = userColl.FindOne(context.TODO(), bson.D{{"username", Author}, {"company_code", CompanyCode}}).Decode(&user)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
 
 	// Get the collection
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
-	if user.Role == "admin" {
+	if AuthorRole == "admin" {
 		// Get the cursor
 		cursor, err := coll.Find(context.TODO(), bson.D{{"company_code", CompanyCode}})
 		if err != nil {
@@ -69,7 +69,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	} else if user.Role == "project-manager" {
+	} else if AuthorRole == "project-manager" {
 		filter := bson.D{{"project_manager", Author}, {"company_code", CompanyCode}}
 		cursor, err := coll.Find(context.TODO(), filter)
 		if err != nil {
@@ -84,7 +84,7 @@ func AllProjects(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else if user.Role == "developer" {
+	} else if AuthorRole == "developer" {
 		filter := bson.D{{"assigned_to", Author}, {"company_code", CompanyCode}}
 		cursor, err := coll.Find(context.TODO(), filter)
 		if err != nil {
@@ -181,7 +181,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -209,10 +209,15 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	if verifyAdmin(Author, CompanyCode, client) == false {
+	//if verifyAdmin(Author, CompanyCode, client) == false {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	if AuthorRole != "admin" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	defer func() {
 		// Disconnect the client
 		if err := client.Disconnect(context.TODO()); err != nil {
@@ -294,7 +299,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -323,9 +328,9 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	client := config.ClientConnection()
 
 	// Check if the author is an admin or project-manager for the project to be updated only then the project can be updated
-	if verifyAdmin(Author, CompanyCode, client) == false {
+	if AuthorRole != "admin" {
 		// Check if the user is a project manager for the project
-		if verifyProjectManager(Author, projectID, client) == false {
+		if AuthorRole != "project-manager" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -425,7 +430,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the user is authenticated
-	Author, CompanyCode, _, err := authenticate(r)
+	Author, CompanyCode, AuthorRole, err := authenticate(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -442,8 +447,12 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get the client connection
 	client := config.ClientConnection()
-	if verifyAdmin(Author, CompanyCode, client) == false { // check if the user is an admin
-		w.WriteHeader(http.StatusUnauthorized) // set the status to 401 Unauthorized
+	//if verifyAdmin(Author, CompanyCode, client) == false { // check if the user is an admin
+	//	w.WriteHeader(http.StatusUnauthorized) // set the status to 401 Unauthorized
+	//	return
+	//}
+	if AuthorRole != "admin" {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	coll := client.Database(config.ViperEnvVariable("dbName")).Collection("projects")
