@@ -149,6 +149,9 @@ function UpdateProjectModal(props) {
                         </div>
                         )}
                         <div>
+                            <div className="ml-3 mb-1">
+                                <p>Assigned Users</p>
+                            </div>
                             <div className="mb-3 xl:w-96">
                                 <Multiselect
                                     options={objects}
