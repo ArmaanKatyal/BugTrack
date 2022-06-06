@@ -59,13 +59,12 @@ function ProjectTickets(props) {
     };
 
     const convertDate = (date) => {
-      // convert string to date
-      var d = new Date(date);
-      // convert date to string
-      var dateString = d.toLocaleDateString();
-      return dateString;
-    }
-
+        // convert string to date
+        var d = new Date(date);
+        // convert date to string
+        var dateString = d.toLocaleDateString();
+        return dateString;
+    };
 
     React.useEffect(() => {
         getProjectData();
@@ -91,7 +90,8 @@ function ProjectTickets(props) {
                             </h5>
                             <h5 className="font-light leading-tight text-lg mt-1 mb-1 text-white">
                                 {/* {projectData.created_on} */}
-                                Created on: {!loading && (convertDate(projectData.created_on))}
+                                Created on:{" "}
+                                {!loading && convertDate(projectData.created_on)}
                             </h5>
                         </div>
                         {loading && (
