@@ -43,6 +43,7 @@ func main() {
 	router.HandleFunc("/api/v1/auth/forgotPassword", controllers.ForgotPassword).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/v1/auth/signup", controllers.Signup).Methods("POST")
 	router.HandleFunc("/api/v1/logs", controllers.AllLogs).Methods("GET")
+	router.HandleFunc("/api/v1/metrics", controllers.MetricsByRole).Methods("GET")
 	router.NotFoundHandler = http.HandlerFunc(NotFound) // set the 404 handler
 
 	corsWrapper := cors.New(cors.Options{ // create a new cors wrapper
