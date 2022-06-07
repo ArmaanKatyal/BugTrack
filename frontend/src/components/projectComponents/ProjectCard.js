@@ -77,7 +77,7 @@ function ProjectCard(props) {
         }
     }, []);
     return (
-        <div className="absolute w-11/12 flex flex-col bg-white h-auto top-40 rounded-lg shadow-xl font-sans-new">
+        <div className="w-11/12 flex flex-col bg-white h-auto rounded-lg shadow-xl font-sans-new">
             <div className="flex flex-row justify-between bg-white rounded-tr-lg rounded-tl-lg shadow-lg">
                 <div className="flex flex-col ml-4 p-2">
                     {/* <h2 className="text-xl font-sans-new">Projects</h2> */}
