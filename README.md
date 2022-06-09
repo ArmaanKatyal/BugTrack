@@ -63,8 +63,7 @@ From the dashboard, an admin
 
 From the same page, by hitting the tripple dots in the actions section of the table, you are able to update or delete the projects. Upon using the corresponding button, you will be prompted with a modal asking you to confirm your action. Deleting a project will as well delete every ticket linked to the project.
 ![updateproject](https://user-images.githubusercontent.com/66411529/172743216-e98872cd-b4fe-4720-9b9f-0ffa605b6bbb.jpg)
-
-[deleteproject](https://user-images.githubusercontent.com/66411529/172743231-877048e6-66ee-41a1-901c-6fc1ec7aee49.jpg)
+![deleteproject](https://user-images.githubusercontent.com/66411529/172744176-775ed5c7-f150-409a-a6fa-fb4b3ea4f2e3.jpg)
 
 #### C - Tickets
 
